@@ -32,7 +32,7 @@ classdef Sawyer < handle
             L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0);
             L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571,     'offset',0);
             L(7) = Link('d',0.11,   'a',0,       'alpha',0,     'offset',0);
-        % FROM THEO
+        
 %             L(1) = Link('d',0.317,  'a',0.081,  'alpha', -1.571,  'offset',0);
 %             L(2) = Link('d',0.1925, 'a',0,      'alpha',-1.571,     'offset',0);    
 %             L(3) = Link('d',0.4,    'a',0,        'alpha',-1.571,     'offset',0);
