@@ -13,3 +13,4 @@ qM = jtraj(q0,qr,30);
 
 bot.model.plot(qM);
 bot.model.teach();
+%comment
