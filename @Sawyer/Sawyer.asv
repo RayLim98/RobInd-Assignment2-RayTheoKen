@@ -2,7 +2,6 @@ classdef Sawyer < handle
     properties
         model;
         workspace = [-2 2 -2 2 0 2];   
-        qr = [0 -pi -pi/2 pi/2 0 -pi/2 0];
         useGripper = false;
         x = 0;
         y = 0;
@@ -85,23 +84,8 @@ classdef Sawyer < handle
             display(['Finished coloring ', num2str(toc), ' seconds']);
         end       
         %% Generate Trajectory
-        function [qM] = genTraj(self,tr)
-            mask = [1,1,1,0,0,0];
-            q0 = self.model.getpos();
-            qf = self.model.ikine(tr,q0,mask);
-            qM = jtraj(q0,qf,50);
-        end
-         %% Generate Trajectory Trap
-        function genTrajTrap(q0,qf)
+        function genTraj(q0,qf)
             
-        end
-         %% Generate Trajectory RMRC
-        function genTrajRMRC(q0,qf)
-            
-        end
-         %% Default position
-         function resetJoints(self)
-            self.model.plot(self.qr);
         end
     end
 end

@@ -1,6 +1,5 @@
 function [tr] = GetLinkPointMatrixes(robot)
 %GETLINKLINEMATRIXS 
-%   
     tr(:,:,:,1) = robot.base;
     for i = 1: robot.n
         link = robot.links(i);
