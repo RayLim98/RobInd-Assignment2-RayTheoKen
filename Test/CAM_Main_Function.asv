@@ -28,14 +28,11 @@ robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the r
 %            assign x of mesh
 %            assign y of mesh
 %            assign z of mesh
-%            assign Pp arbitrary of plane for detection (check line method)
-%   Wall_ = newWall_1;
-%     Wall_2 = newWall_2(X,Y);
-%       Wall_3 = newWall_3(X,Y);
-%         Wall_4 = newWall_4(X,Y);
+%            assign Pp arbitrary of mesh
+
+             
             end      
-            
-         
+%             
 %% CAM Object Class
 
 shopWallIntersect = shopWallInt;
