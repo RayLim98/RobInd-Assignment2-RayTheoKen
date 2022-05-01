@@ -5,6 +5,10 @@
 %if{
 
  
+%% CAM Object Class
+
+shopWallIntersect = shopWallInt;
+
 
 
 
