@@ -3,7 +3,7 @@
 % determine if the point is 
 % inside (result == 1) or 
 % outside a triangle (result ==0 )
-function result = IsIntersectionPointInsideTriangle(intersectP,triangleVerts)
+function result = IsIntersectionPointInsideTriangle(intersectP,triangleVerts)   
 
 u = triangleVerts(2,:) - triangleVerts(1,:);
 v = triangleVerts(3,:) - triangleVerts(1,:);
