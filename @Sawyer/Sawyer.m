@@ -5,7 +5,7 @@ classdef Sawyer < handle
         useGripper = false;
         CanOperate = true;
         % Ready Pose
-        qr = [0 -pi -pi/2 pi/2 0 -pi/2 0];
+        qr = [0 -pi -pi/2 pi/2 -pi/2 -pi/2 0];
         % Base position         
         x = 0;
         y = 0;
@@ -95,11 +95,12 @@ classdef Sawyer < handle
         end
         %% Generate Trajectory RMRC
         function [qMatrix] = genTrajRMRC(self, x0, xf)
-            t = 3;             % Total time (s)
+            display('Generating RMRC Trajectory')
+            t = 3;              % Total time (s)
             deltaT = 0.05;      % Control frequency
             steps = t/deltaT;   % No. of steps for simulation
             delta = 2*pi/steps; % Small angle change
-            epsilon = 0.1;      % Threshold value for manipulability/Damped Least Squares
+            epsilon = 0.2;      % Threshold value for manipulability/Damped Least Squares
             W = diag([1 1 1 0.1 0.1 0.1]);    % Weighting matrix for the velocity vector
             
             % 1.2) Allocate array data
@@ -108,8 +109,8 @@ classdef Sawyer < handle
             qdot = zeros(steps,7);          % Array for joint velocities
             theta = zeros(3,steps);         % Array for roll-pitch-yaw angles
             x = zeros(3,steps);             % Array for x-y-z trajectory
-            positionError = zeros(3,steps); % For plotting trajectory error
-            angleError = zeros(3,steps);    % For plotting trajectory error
+%             positionError = zeros(3,steps); % For plotting trajectory error
+%             angleError = zeros(3,steps);    % For plotting trajectory error
             
             % 1.3) Set up trajectory, initial pose
             s = lspb(0,1,steps);                % Trapezoidal trajectory scalar
@@ -117,20 +118,21 @@ classdef Sawyer < handle
                 x(1,i) = (1-s(i))*x0(1) + s(i)*xf(1); % Points in x
                 x(2,i) = (1-s(i))*x0(2) + s(i)*xf(2); % Points in y
                 x(3,i) = (1-s(i))*x0(3) + s(i)*xf(3); % Points in z
-                theta(1,i) = 0;                 % Roll angle 
-                theta(2,i) = 0;            % Pitch angle
+                theta(1,i) = 90;                % Roll angle 
+                theta(2,i) = 90;                % Pitch angle
                 theta(3,i) = 0;                 % Yaw angle
             end
-             
-            qMatrix(1,:) = self.model.getpos();                                            % Solve joint angles to achieve first waypoint
-            
+            % set current joint position as the first row
+            q0 = self.model.getpos();                                                     % Initial guess for joint angles
+            T = self.model.fkine(q0);
+            qMatrix(1,:) = self.model.ikcon(T,q0);                                        % Solve joint angles to achieve first waypoint            
             % 1.4) Track the trajectory with RMRC
             for i = 1:steps-1
                 T = self.model.fkine(qMatrix(i,:));                                           % Get forward transformation at current joint state
                 deltaX = x(:,i+1) - T(1:3,4);                                         	% Get position error from next waypoint
                 Rd = rpy2r(theta(1,i+1),theta(2,i+1),theta(3,i+1));                     % Get next RPY angles, convert to rotation matrix
-                Ra = T(1:3,1:3);                                                        % Current end-effector rotation matrix
-                Rdot = (1/deltaT)*(Rd - Ra);                                                % Calculate rotation matrix error
+                Ra = T(1:3,1:3);                                     % Current end-effector rotation matrix
+                Rdot = (1/deltaT)*(Rd - Ra);                                             % Calculate rotation matrix error
                 S = Rdot*Ra';                                                           % Skew symmetric!
                 linear_velocity = (1/deltaT)*deltaX;
                 angular_velocity = [S(3,2);S(1,3);S(2,1)];                              % Check the structure of Skew Symmetric matrix!!
@@ -144,19 +146,20 @@ classdef Sawyer < handle
                     lambda = 0;
                 end
                 invJ = inv(J'*J + lambda *eye(7))*J';                                   % DLS Inverse
-                qdot(i,:) = (invJ*xdot)';                                                % Solve the RMRC equation (you may need to transpose the         vector)
+                qdot(i,:) = (invJ*xdot)';                                               % Solve the RMRC equation (you may need to transpose the         vector)
                 for j = 1:6                                                             % Loop through joints 1 to 6
-                    if qMatrix(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)                     % If next joint angle is lower than joint limit...
+                    if qMatrix(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)           % If next joint angle is lower than joint limit...
                         qdot(i,j) = 0; % Stop the motor
                     elseif qMatrix(i,j) + deltaT*qdot(i,j) > self.model.qlim(j,2)                 % If next joint angle is greater than joint limit ...
                         qdot(i,j) = 0; % Stop the motor
                     end
                 end
                 qMatrix(i+1,:) = qMatrix(i,:) + deltaT*qdot(i,:);                         	% Update next joint state based on joint velocities
-                positionError(:,i) = x(:,i+1) - T(1:3,4);                               % For plotting
-                angleError(:,i) = deltaTheta;                                           % For plotting
+%                 positionError(:,i) = x(:,i+1) - T(1:3,4);                               % For plotting
+%                 angleError(:,i) = deltaTheta;                                          % For plotting
             end
         end
+
          %% Default position
          function resetJoints(self)
             self.model.plot(self.qr);
