@@ -16,7 +16,7 @@ classdef Sawyer < handle
             self.y = y;
             self.z = z;
             self.GetSawyerRobot();
-%             self.PlotAndColourRobot();%
+            self.PlotAndColourRobot();
         end
 
         %% GetUR3dRobot
