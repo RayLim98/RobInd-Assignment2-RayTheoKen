@@ -252,7 +252,7 @@ function opt = plot_options(robot, optin)
     opt.alpha = 1;
     
         % timing/looping
-    opt.delay = 0.1;
+    opt.delay = 0.02;
     opt.fps = [];
     opt.loop = false;
     
