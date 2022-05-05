@@ -1,9 +1,20 @@
-clear
+clear 
 clf
 clc
-
-wall = GlassWallY(2, 5, [0 -2]);
+%% ENV SETUP
+SawyerRobot = Sawyer(0,2,1);
 hold on
-wall2 = CreateYWall(2, 5, [0 2]);
-wall3 = CreateXWall(2, 5, [0 -2]);
-wall4 = CreateXWall(2, 5, [0 2]);
+axis([-2 2 -2 3.5 0 2])
+SawyerRobot.model.teach
+
+Table = PlyObject('Bar_EventsHire1.ply', [0,0,0], 0);
+
+Container1 = PlyObject('Container.ply', [-0.89,2.3,0.9], pi/2);
+Container2 = PlyObject('Container.ply', [-0.89,1.75,0.9], pi/2);
+Container3 = PlyObject('Container.ply', [0.8,2,0.9], 3/2*pi);
+Container4 = PlyObject('Container.ply', [0.8,2.55,0.9], 3/2*pi);
+
+Bottle = PlyObject('Bottle.ply', [0,2.9,0.9], pi/2);
+
+%%
+mdl_puma560

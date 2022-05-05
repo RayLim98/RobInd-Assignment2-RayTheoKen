@@ -30,13 +30,13 @@ classdef Sawyer < handle
                 name = ['SawyerBot',datestr(now,'yyyymmddTHHMMSSFFF')];
         %     end
 %         qr = [0 -pi -pi/2 pi/2 -pi/2 0 0]
-            L(1) = Link('d',0.237,  'a',0.081,  'alpha', -1.571,  'offset',0);
-            L(2) = Link('d',0.1925, 'a',0,      'alpha',-1.571,     'offset',0);    
-            L(3) = Link('d',0.4,    'a',0,        'alpha',-1.571,     'offset',0);
-            L(4) = Link('d',-0.1685,'a',0,       'alpha',-1.571,  'offset',0);
-            L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0);
-            L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571,     'offset',0);
-            L(7) = Link('d',0.11,   'a',0,       'alpha',0,     'offset',0);
+            L(1) = Link('d',0.237,  'a',0.081,   'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
+            L(2) = Link('d',0.1925, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);    
+            L(3) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
+            L(4) = Link('d',-0.1685,'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(7) = Link('d',0.11,   'a',0,       'alpha',0,      'offset',0, 'qlim',[-270 270]*pi/180);
         
 %             L(1) = Link('d',0.317,  'a',0.081,  'alpha', -1.571,  'offset',0);
 %             L(2) = Link('d',0.1925, 'a',0,      'alpha',-1.571,     'offset',0);    

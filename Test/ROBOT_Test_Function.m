@@ -28,9 +28,6 @@ bot.model.plot(qM)
 tr = transl(0,-1,0);
 qM = bot.genTraj(tr);
 bot.model.plot(qM)
-% Behind
-
-% Above 
 
 %% Test RMRC
 bot.model.plot3d(qr)
