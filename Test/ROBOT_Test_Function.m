@@ -19,18 +19,18 @@ q0 = bot.model.getpos();
 
 %% Robot Trajectory Generation
 
-% mask = [1,1,1,0,0,0];
+mask = [1,1,1,0,0,0];
 % % Right
-% tr = transl(0,-1,0);
-% qM = bot.genTraj(tr);
-% bot.model.plot(qM)
-% % Left
-% tr = transl(0,-1,0);
-% qM = bot.genTraj(tr);
-% bot.model.plot(qM)
-% % Behind
-% 
-% % Above 
+tr = transl(0,-1,0);
+qM = bot.genTraj(tr);
+bot.model.plot(qM)
+% Left
+tr = transl(0,-1,0);
+qM = bot.genTraj(tr);
+bot.model.plot(qM)
+% Behind
+
+% Above 
 
 %% Test RMRC
 bot.model.plot3d(qr)
