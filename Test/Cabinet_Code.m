@@ -8,21 +8,18 @@ close all;
 % 2.1: Make a 3DOF model
 L1 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
 L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-L3 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);   
-% L4 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-% L5 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-% L6 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-robot = SerialLink([L1 L2 L3 ],'name','myRobot');                     
-q = zeros(1,3);                                                     % Create a vector of initial joint angles        
+
+robot = SerialLink([L1 L2 ],'name','myRobot');                     
+q = zeros(1,2);                                                     % Create a vector of initial joint angles        
 scale = 0.5;
 workspace = [-2 2 -2 2 -0.2 2];                                       % Set the size of the workspace when drawing the robot
 robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
 
 % 2.2 and 2.3
 centerpnt = [2,0,0.05];
-side = 1.5;
+side = 0.6;
 plotOptions.plotFaces = true;
-[vertex,faces,faceNormals] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,plotOptions);
+[vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions);
 axis equal
 camlight
 % pPoints = [1.25,0,-0.5 ...
@@ -50,7 +47,9 @@ for i = 1 : size(tr,3)-1
         [intersectP,check] = LinePlaneIntersection(faceNormals(faceIndex,:),vertOnPlane,tr(1:3,4,i)',tr(1:3,4,i+1)'); 
         if check == 1 && IsIntersectionPointInsideTriangle(intersectP,vertex(faces(faceIndex,:)',:))
             plot3(intersectP(1),intersectP(2),intersectP(3),'g*');
-            display('Intersection');
+            display('Get Back Fool!');
+        else
+            display('Ur Good');
         end
     end    
 end
