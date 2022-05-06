@@ -3,7 +3,6 @@ clf
 clc
 
 bot = Sawyer(0,0,0);
-% bot.model.teach();
 hold on
 brick = PlyObject('Brick.ply', [-0.5 0.5 0.2], 0);
 %% Robot set up robot

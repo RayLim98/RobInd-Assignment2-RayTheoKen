@@ -66,7 +66,9 @@ classdef Sawyer < handle
                 display(['Facedata size: ', num2str(size(faceData))...
                     ,' ,Vertexx size: ', num2str(size(vertexData))])
             end
-            self.model.plot3d(zeros(1,self.model.n),'noarrow','workspace',self.workspace);
+            self.model.plot3d(zeros(1,self.model.n),'workspace',self.workspace);
+%             self.model.plot3d(zeros(1,self.model.n),'noarrow','workspace',self.workspace);
+
             if isempty(findobj(get(gca,'Children'),'Type','Light'))
                 camlight
             end  
@@ -94,7 +96,10 @@ classdef Sawyer < handle
             qM = jtraj(q0,qf,50);
         end
         %% Generate Trajectory RMRC
-        function [qMatrix] = genTrajRMRC(self, x0, xf)
+        function [qMatrix] = genTrajRMRC(self, xf)
+            qCurrent = self.model.getpos;
+            trCurrent = self.model.fkine(qCurrent);
+            x0 = trCurrent(1:3,4);
             display('Generating RMRC Trajectory')
             t = 3;              % Total time (s)
             deltaT = 0.05;      % Control frequency
@@ -118,8 +123,8 @@ classdef Sawyer < handle
                 x(1,i) = (1-s(i))*x0(1) + s(i)*xf(1); % Points in x
                 x(2,i) = (1-s(i))*x0(2) + s(i)*xf(2); % Points in y
                 x(3,i) = (1-s(i))*x0(3) + s(i)*xf(3); % Points in z
-                theta(1,i) = 90;                % Roll angle 
-                theta(2,i) = 90;                % Pitch angle
+                theta(1,i) = 0;                % Roll angle 
+                theta(2,i) = 0;                % Pitch angle
                 theta(3,i) = 0;                 % Yaw angle
             end
             % set current joint position as the first row
