@@ -100,6 +100,7 @@ classdef Sawyer < handle
             qCurrent = self.model.getpos;
             trCurrent = self.model.fkine(qCurrent);
             x0 = trCurrent(1:3,4);
+            r0 = trCurrent(1:3,1:3);
             display('Generating RMRC Trajectory')
             t = 3;              % Total time (s)
             deltaT = 0.05;      % Control frequency
@@ -152,6 +153,8 @@ classdef Sawyer < handle
                 end
                 invJ = inv(J'*J + lambda *eye(7))*J';                                   % DLS Inverse
                 qdot(i,:) = (invJ*xdot)';                                               % Solve the RMRC equation (you may need to transpose the         vector)
+%                 qdot(i,end) = 0;
+%                 qdot(i,end - 1) = 0;
                 for j = 1:6                                                             % Loop through joints 1 to 6
                     if qMatrix(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)           % If next joint angle is lower than joint limit...
                         qdot(i,j) = 0; % Stop the motor
