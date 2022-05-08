@@ -30,13 +30,13 @@ classdef Sawyer < handle
                 name = ['SawyerBot',datestr(now,'yyyymmddTHHMMSSFFF')];
         %     end
 %         qr = [0 -pi -pi/2 pi/2 -pi/2 0 0]
-            L(1) = Link('d',0.237,  'a',0.081,  'alpha', -1.571,  'offset',0);
-            L(2) = Link('d',0.1925, 'a',0,      'alpha',-1.571,     'offset',0);    
-            L(3) = Link('d',0.4,    'a',0,        'alpha',-1.571,     'offset',0);
-            L(4) = Link('d',-0.1685,'a',0,       'alpha',-1.571,  'offset',0);
-            L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0);
-            L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571,     'offset',0);
-            L(7) = Link('d',0.11,   'a',0,       'alpha',0,     'offset',0);
+            L(1) = Link('d',0.237,  'a',0.081,   'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
+            L(2) = Link('d',0.1925, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);    
+            L(3) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
+            L(4) = Link('d',-0.1685,'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(7) = Link('d',0.11,   'a',0,       'alpha',0,      'offset',0, 'qlim',[-270 270]*pi/180);
         
 %             L(1) = Link('d',0.317,  'a',0.081,  'alpha', -1.571,  'offset',0);
 %             L(2) = Link('d',0.1925, 'a',0,      'alpha',-1.571,     'offset',0);    
@@ -66,7 +66,9 @@ classdef Sawyer < handle
                 display(['Facedata size: ', num2str(size(faceData))...
                     ,' ,Vertexx size: ', num2str(size(vertexData))])
             end
-            self.model.plot3d(zeros(1,self.model.n),'noarrow','workspace',self.workspace);
+            self.model.plot3d(zeros(1,self.model.n),'workspace',self.workspace);
+%             self.model.plot3d(zeros(1,self.model.n),'noarrow','workspace',self.workspace);
+
             if isempty(findobj(get(gca,'Children'),'Type','Light'))
                 camlight
             end  
@@ -94,7 +96,11 @@ classdef Sawyer < handle
             qM = jtraj(q0,qf,50);
         end
         %% Generate Trajectory RMRC
-        function [qMatrix] = genTrajRMRC(self, x0, xf)
+        function [qMatrix] = genTrajRMRC(self, xf)
+            qCurrent = self.model.getpos;
+            trCurrent = self.model.fkine(qCurrent);
+            x0 = trCurrent(1:3,4);
+            r0 = trCurrent(1:3,1:3);
             display('Generating RMRC Trajectory')
             t = 3;              % Total time (s)
             deltaT = 0.05;      % Control frequency
@@ -118,8 +124,8 @@ classdef Sawyer < handle
                 x(1,i) = (1-s(i))*x0(1) + s(i)*xf(1); % Points in x
                 x(2,i) = (1-s(i))*x0(2) + s(i)*xf(2); % Points in y
                 x(3,i) = (1-s(i))*x0(3) + s(i)*xf(3); % Points in z
-                theta(1,i) = 90;                % Roll angle 
-                theta(2,i) = 90;                % Pitch angle
+                theta(1,i) = 0;                % Roll angle 
+                theta(2,i) = 0;                % Pitch angle
                 theta(3,i) = 0;                 % Yaw angle
             end
             % set current joint position as the first row
@@ -147,6 +153,8 @@ classdef Sawyer < handle
                 end
                 invJ = inv(J'*J + lambda *eye(7))*J';                                   % DLS Inverse
                 qdot(i,:) = (invJ*xdot)';                                               % Solve the RMRC equation (you may need to transpose the         vector)
+%                 qdot(i,end) = 0;
+%                 qdot(i,end - 1) = 0;
                 for j = 1:6                                                             % Loop through joints 1 to 6
                     if qMatrix(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)           % If next joint angle is lower than joint limit...
                         qdot(i,j) = 0; % Stop the motor
