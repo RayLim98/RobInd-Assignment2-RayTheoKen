@@ -25,6 +25,8 @@ face=[1,2,3;1,3,7;
      2,4,8;2,3,8;
      3,7,5;3,8,5;
      6,5,8;6,4,8];
+ 
+ FaceAlpha = 0.3;
 
 if 2 < nargout    
     faceNormals = zeros(size(face,1),3);
@@ -67,9 +69,9 @@ end
 
 %% If you want to plot the edges
 if isfield(plotOptions,'plotFaces') && plotOptions.plotFaces
-    tcolor = [.2 .2 .8];
+    tcolor = [.4 1. 1];
     
-    patch('Faces',face,'Vertices',vertex,'FaceVertexCData',tcolor,'FaceColor','flat','lineStyle','none');
+    patch('FaceAlpha', FaceAlpha, 'Faces',face,'Vertices',vertex,'FaceVertexCData',tcolor,'FaceColor','flat','lineStyle','none');
 end
 
 end
