@@ -5,7 +5,7 @@ classdef Sawyer < handle
         useGripper = false;
         CanOperate = true;
         % Ready Pose
-        qr = [0 -pi -pi/2 pi/2 -pi/2 -pi/2 0];
+        qr = [0 0 0 0 pi/2 -pi/2 0];
         % Base position         
         x = 0;
         y = 0;
@@ -29,7 +29,7 @@ classdef Sawyer < handle
                 pause(0.001);
                 name = ['SawyerBot',datestr(now,'yyyymmddTHHMMSSFFF')];
         %     end
-%         qr = [0 -pi -pi/2 pi/2 -pi/2 0 0]
+
             L(1) = Link('d',0.237,  'a',0.081,   'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
             L(2) = Link('d',0.1925, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);    
             L(3) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
@@ -37,20 +37,12 @@ classdef Sawyer < handle
             L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
             L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
             L(7) = Link('d',0.11,   'a',0,       'alpha',0,      'offset',0, 'qlim',[-270 270]*pi/180);
-        
-%             L(1) = Link('d',0.317,  'a',0.081,  'alpha', -1.571,  'offset',0);
-%             L(2) = Link('d',0.1925, 'a',0,      'alpha',-1.571,     'offset',0);    
-%             L(3) = Link('d',0.4,    'a',0,        'alpha',-1.571,     'offset',0);
-%             L(4) = Link('d',0.1685,'a',0,       'alpha',-1.571,  'offset',0);
-%             L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0);
-%             L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571,     'offset',0);
-%             L(7) = Link('d',0.13375,   'a',0,       'alpha',0,     'offset',0);
 
             self.model = SerialLink(L,'name',name);
             self.model.base = self.model.base * transl(self.x, self.y, self.z);
         end
         %% PlotAndColourRobot
-        function PlotAndColourRobot(self)%robot,workspace)
+        function PlotAndColourRobot(self) %robot,workspace)
             tic
             display('Coloring Robot Sequence started')
             for linkIndex = 0:self.model.n
@@ -125,8 +117,8 @@ classdef Sawyer < handle
                 x(2,i) = (1-s(i))*x0(2) + s(i)*xf(2); % Points in y
                 x(3,i) = (1-s(i))*x0(3) + s(i)*xf(3); % Points in z
                 theta(1,i) = 0;                % Roll angle 
-                theta(2,i) = 0;                % Pitch angle
-                theta(3,i) = 0;                 % Yaw angle
+                theta(2,i) = pi/2;                % Pitch angle
+                theta(3,i) = 0;                % Yaw angle
             end
             % set current joint position as the first row
             q0 = self.model.getpos();                                                     % Initial guess for joint angles
@@ -142,7 +134,6 @@ classdef Sawyer < handle
                 S = Rdot*Ra';                                                           % Skew symmetric!
                 linear_velocity = (1/deltaT)*deltaX;
                 angular_velocity = [S(3,2);S(1,3);S(2,1)];                              % Check the structure of Skew Symmetric matrix!!
-                deltaTheta = tr2rpy(Rd*Ra');                                            % Convert rotation matrix to RPY angles
                 xdot = W*[linear_velocity;angular_velocity];                          	% Calculate end-effector velocity to reach next waypoint.
                 J = self.model.jacob0(qMatrix(i,:));                 % Get Jacobian at current joint state
                 m(i) = sqrt(det(J*J'));
@@ -153,9 +144,7 @@ classdef Sawyer < handle
                 end
                 invJ = inv(J'*J + lambda *eye(7))*J';                                   % DLS Inverse
                 qdot(i,:) = (invJ*xdot)';                                               % Solve the RMRC equation (you may need to transpose the         vector)
-%                 qdot(i,end) = 0;
-%                 qdot(i,end - 1) = 0;
-                for j = 1:6                                                             % Loop through joints 1 to 6
+                for j = 1:7                                                             % Loop through joints 1 to 6
                     if qMatrix(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)           % If next joint angle is lower than joint limit...
                         qdot(i,j) = 0; % Stop the motor
                     elseif qMatrix(i,j) + deltaT*qdot(i,j) > self.model.qlim(j,2)                 % If next joint angle is greater than joint limit ...
@@ -163,11 +152,41 @@ classdef Sawyer < handle
                     end
                 end
                 qMatrix(i+1,:) = qMatrix(i,:) + deltaT*qdot(i,:);                         	% Update next joint state based on joint velocities
-%                 positionError(:,i) = x(:,i+1) - T(1:3,4);                               % For plotting
-%                 angleError(:,i) = deltaTheta;                                          % For plotting
             end
         end
+        %% Generate Trag RMRC w/ hold
+        function [qM] = genTragRMRCHold(self,xf)
+            tr = self.model.fkine(sefl.model.getpos) % Get current pose 
+            x0 = tr(4,1:3);                  % Get x y z values of current pose
+            
+            steps = 20;
+            deltaT = 0.05
+            qM = nan(steps, 7);
+            x = zeros(3,steps);             % Array for x-y-z trajectory
+            s = lspb(0,1,steps);            % Create interpolation scalar
+            for i=1:steps
+                x(:,i) = (1-s(i))*x0 + s(i)*xf;         % Points in x
+            end
+            
+            qM(1,:) = self.model.ikine(tr, self.model.getpos); 
 
+            % 3.10
+            for i = 1:steps-1
+                xdot = (x(:,i+1) - x(:,i))/deltaT;              % Calculate velocity at discrete time step
+                J = self.model.jacob0(qM(i,:));                       % Get the Jacobian at the current state
+%                 J = J(1:3,1:3)
+                qdot = inv(J)*xdot;                             % Solve velocitities via RMRC
+                qM(i+1,:) =  qM(i,:) + deltaT*[qdot;0;0;0]';    % Update next joint state
+            end
+        end  
+        %% Go to ready pose 
+        function goToReadyPose(self)
+            display('Return to waiting position')
+            qCurrent = self.model.getpos;
+            qReady = self.qr;    
+            qM = jtraj(qCurrent, qReady, 20);
+            self.model.plot3d(qM)
+        end  
          %% Default position
          function resetJoints(self)
             self.model.plot(self.qr);
