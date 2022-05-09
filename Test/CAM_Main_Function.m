@@ -10,6 +10,10 @@ L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
 
 robot = SerialLink([L1 L2 ],'name','HumanEmployee');                     
 q = zeros(1,2);                                                     % Create a vector of initial joint angles        
+
+% % % q1 = [-pi/4,0,0];
+% % % q2 = [pi/4,0,0];
+
 scale = 0.5;
 workspace = [-4 5 -4 4 -2 3];                                       % Set the size of the workspace when drawing the robot
 robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
@@ -55,7 +59,7 @@ for i = 1 : size(tr,3)-1
         [intersectP,check] = LinePlaneIntersection(faceNormals(faceIndex,:),vertOnPlane,tr(1:3,4,i)',tr(1:3,4,i+1)'); 
         if check == 1 && IsIntersectionPointInsideTriangle(intersectP,vertex(faces(faceIndex,:)',:))
             plot3(intersectP(1),intersectP(2),intersectP(3),'g*');
-            display('Workspace Breach!');
+            display('Standby');
         end
     end    
 end
