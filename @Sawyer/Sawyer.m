@@ -2,28 +2,28 @@ classdef Sawyer < handle
     properties
         model;
         workspace = [-2 2 -2 2 0 2];   
+
+        % Bot state
         useGripper = false;
-        CanOperate = true;
-        % Ready Pose
-        qr = [0 0 0 0 pi/2 -pi/2 0];
-        % Base position         
-        x = 0;
-        y = 0;
-        z = 0;
+        canOperate = true;
+        isHolding = false;
+
+        % Positions
+        % Manually found for waypoints
+        qr = [0 0 0 0 pi/2 -pi/2 0];            % Readsy position
+        qOp = [0 -3.0543 0 0.1187 0 1.7453 0];  % Operation Position
+        qCup = [1.0385 -1.9437 0 1.5429 0 2.0320 0];      % Cup Position
     end
     
     methods
         %% Class for UR5 robot simulation
-        function self = Sawyer(x, y, z)
-            self.x = x;
-            self.y = y;
-            self.z = z;
-            self.GetSawyerRobot();
+        function self = Sawyer(x,y,z)
+            self.GetSawyerRobot(x,y,z);
             self.PlotAndColourRobot();
         end
 
         %% GetUR3dRobot
-        function GetSawyerRobot(self)
+        function GetSawyerRobot(self, x, y, z)
         %     if nargin < 1
                 % Create a unique name (ms timestamp after 1ms pause)
                 pause(0.001);
@@ -39,7 +39,7 @@ classdef Sawyer < handle
             L(7) = Link('d',0.11,   'a',0,       'alpha',0,      'offset',0, 'qlim',[-270 270]*pi/180);
 
             self.model = SerialLink(L,'name',name);
-            self.model.base = self.model.base * transl(self.x, self.y, self.z);
+            self.model.base = self.model.base * transl(x, y, z);
         end
         %% PlotAndColourRobot
         function PlotAndColourRobot(self) %robot,workspace)
@@ -82,23 +82,18 @@ classdef Sawyer < handle
         end       
         %% Generate Trajectory
         function [qM] = genTraj(self,tr)
-            mask = [1,1,1,0,0,0];
+            mask = [1,1,1,1,1,1];
             q0 = self.model.getpos();
             qf = self.model.ikine(tr,q0,mask);
             qM = jtraj(q0,qf,50);
         end
         %% Generate Trajectory RMRC
         function [qMatrix] = genTrajRMRC(self, xf)
-            qCurrent = self.model.getpos;
-            trCurrent = self.model.fkine(qCurrent);
-            x0 = trCurrent(1:3,4);
-            r0 = trCurrent(1:3,1:3);
-            display('Generating RMRC Trajectory')
-            t = 3;              % Total time (s)
+            t = 5;             % Total time (s)
             deltaT = 0.05;      % Control frequency
             steps = t/deltaT;   % No. of steps for simulation
             delta = 2*pi/steps; % Small angle change
-            epsilon = 0.2;      % Threshold value for manipulability/Damped Least Squares
+            epsilon = 0.1;      % Threshold value for manipulability/Damped Least Squares
             W = diag([1 1 1 0.1 0.1 0.1]);    % Weighting matrix for the velocity vector
             
             % 1.2) Allocate array data
@@ -107,33 +102,38 @@ classdef Sawyer < handle
             qdot = zeros(steps,7);          % Array for joint velocities
             theta = zeros(3,steps);         % Array for roll-pitch-yaw angles
             x = zeros(3,steps);             % Array for x-y-z trajectory
-%             positionError = zeros(3,steps); % For plotting trajectory error
-%             angleError = zeros(3,steps);    % For plotting trajectory error
+            positionError = zeros(3,steps); % For plotting trajectory error
+            angleError = zeros(3,steps);    % For plotting trajectory error
             
+            qCurrent = self.model.getpos;
+            tr = self.model.fkine(qCurrent);
+            x0 = tr(1:3, 4);
             % 1.3) Set up trajectory, initial pose
             s = lspb(0,1,steps);                % Trapezoidal trajectory scalar
             for i=1:steps
                 x(1,i) = (1-s(i))*x0(1) + s(i)*xf(1); % Points in x
                 x(2,i) = (1-s(i))*x0(2) + s(i)*xf(2); % Points in y
                 x(3,i) = (1-s(i))*x0(3) + s(i)*xf(3); % Points in z
-                theta(1,i) = 0;                % Roll angle 
-                theta(2,i) = pi/2;                % Pitch angle
-                theta(3,i) = 0;                % Yaw angle
+                theta(1,i) = 0;                 % Roll angle 
+                theta(2,i) = 0;                 % Pitch angle
+                theta(3,i) = 0;                 % Yaw angle
             end
-            % set current joint position as the first row
-            q0 = self.model.getpos();                                                     % Initial guess for joint angles
-            T = self.model.fkine(q0);
-            qMatrix(1,:) = self.model.ikcon(T,q0);                                        % Solve joint angles to achieve first waypoint            
+             
+            T = [rpy2r(theta(1,1),theta(2,1),theta(3,1)) x(:,1);zeros(1,3) 1];          % Create transformation of first point and angle
+            q0 = zeros(1,7);                                                            % Initial guess for joint angles
+            qMatrix(1,:) = self.model.ikcon(T,q0);                                            % Solve joint angles to achieve first waypoint
+            
             % 1.4) Track the trajectory with RMRC
             for i = 1:steps-1
                 T = self.model.fkine(qMatrix(i,:));                                           % Get forward transformation at current joint state
                 deltaX = x(:,i+1) - T(1:3,4);                                         	% Get position error from next waypoint
                 Rd = rpy2r(theta(1,i+1),theta(2,i+1),theta(3,i+1));                     % Get next RPY angles, convert to rotation matrix
-                Ra = T(1:3,1:3);                                     % Current end-effector rotation matrix
-                Rdot = (1/deltaT)*(Rd - Ra);                                             % Calculate rotation matrix error
+                Ra = T(1:3,1:3);                                                        % Current end-effector rotation matrix
+                Rdot = (1/deltaT)*(Rd - Ra);                                                % Calculate rotation matrix error
                 S = Rdot*Ra';                                                           % Skew symmetric!
                 linear_velocity = (1/deltaT)*deltaX;
                 angular_velocity = [S(3,2);S(1,3);S(2,1)];                              % Check the structure of Skew Symmetric matrix!!
+                deltaTheta = tr2rpy(Rd*Ra');                                            % Convert rotation matrix to RPY angles
                 xdot = W*[linear_velocity;angular_velocity];                          	% Calculate end-effector velocity to reach next waypoint.
                 J = self.model.jacob0(qMatrix(i,:));                 % Get Jacobian at current joint state
                 m(i) = sqrt(det(J*J'));
@@ -143,50 +143,67 @@ classdef Sawyer < handle
                     lambda = 0;
                 end
                 invJ = inv(J'*J + lambda *eye(7))*J';                                   % DLS Inverse
-                qdot(i,:) = (invJ*xdot)';                                               % Solve the RMRC equation (you may need to transpose the         vector)
+                qdot(i,:) = (invJ*xdot)';                                                % Solve the RMRC equation (you may need to transpose the         vector)
                 for j = 1:7                                                             % Loop through joints 1 to 6
-                    if qMatrix(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)           % If next joint angle is lower than joint limit...
+                    if qMatrix(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)                     % If next joint angle is lower than joint limit...
                         qdot(i,j) = 0; % Stop the motor
                     elseif qMatrix(i,j) + deltaT*qdot(i,j) > self.model.qlim(j,2)                 % If next joint angle is greater than joint limit ...
                         qdot(i,j) = 0; % Stop the motor
                     end
                 end
                 qMatrix(i+1,:) = qMatrix(i,:) + deltaT*qdot(i,:);                         	% Update next joint state based on joint velocities
+                positionError(:,i) = x(:,i+1) - T(1:3,4);                               % For plotting
+                angleError(:,i) = deltaTheta;    
             end
         end
         %% Generate Trag RMRC w/ hold
-        function [qM] = genTragRMRCHold(self,xf)
-            tr = self.model.fkine(sefl.model.getpos) % Get current pose 
-            x0 = tr(4,1:3);                  % Get x y z values of current pose
-            
-            steps = 20;
-            deltaT = 0.05
-            qM = nan(steps, 7);
-            x = zeros(3,steps);             % Array for x-y-z trajectory
-            s = lspb(0,1,steps);            % Create interpolation scalar
-            for i=1:steps
-                x(:,i) = (1-s(i))*x0 + s(i)*xf;         % Points in x
-            end
-            
-            qM(1,:) = self.model.ikine(tr, self.model.getpos); 
-
-            % 3.10
-            for i = 1:steps-1
-                xdot = (x(:,i+1) - x(:,i))/deltaT;              % Calculate velocity at discrete time step
-                J = self.model.jacob0(qM(i,:));                       % Get the Jacobian at the current state
-%                 J = J(1:3,1:3)
-                qdot = inv(J)*xdot;                             % Solve velocitities via RMRC
-                qM(i+1,:) =  qM(i,:) + deltaT*[qdot;0;0;0]';    % Update next joint state
-            end
+        function [qM] = GenTragRMRCHold(self,trf)
+            qCurrent = self.model.getpos;
+            tr = self.model.fkine(qCurrent);
         end  
         %% Go to ready pose 
-        function goToReadyPose(self)
+        function GoToReadyPose(self)
             display('Return to waiting position')
             qCurrent = self.model.getpos;
             qReady = self.qr;    
             qM = jtraj(qCurrent, qReady, 20);
             self.model.plot3d(qM)
         end  
+        %% Go to ready pose 
+        function [qM] = GoToCupTrajectory(self)
+            display('Reaching for cup')
+            % q0 to take into account of the current pose
+            q0 = self.model.getpos;
+            
+            % q1 to ready it for the working position
+            q1 = self.qOp;
+            % Value for bot to face foward
+            q1(1)= 1.2828; 
+
+            % q2 to get predetermined position of cup
+            q2 = self.qCup;
+
+            % Concatonate way points
+            qWayPoints = [q0;q1;q2];
+            
+            % Generate way points
+            qM = InterpolateWaypointsRadians(qWayPoints, 5*pi/180);
+
+            % Check qM forCollision detection
+            % TODO: Colision detection 
+
+            % Commence trajectory
+%             self.model.plot3d(qM)
+        end  
+        %% First order way point 
+        function StartOrderTrajectory(self)
+            display('Starting order')
+            
+        end
+        function StartOrderTrajectory2(self)
+            display('Starting order')
+            
+        end
          %% Default position
          function resetJoints(self)
             self.model.plot(self.qr);
