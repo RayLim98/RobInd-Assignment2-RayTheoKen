@@ -1,6 +1,7 @@
 sBot = Sawyer(0,2,1);
 hold on
 axis([-2 2 -2 3.5 0 2])
+
 sBot.model.teach
 
 Table = PlyObject('Bar_EventsHire1.ply', [0,0,0], 0);
