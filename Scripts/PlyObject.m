@@ -3,6 +3,7 @@ classdef PlyObject < handle
         vertices;
         mesh_h;
         pose;
+        offset = troty(pi/2) % added for bottle object
     end
     methods
         % xyz = [ x y z ] input
@@ -17,8 +18,8 @@ classdef PlyObject < handle
         end
         % transMatrix = standard 4by4 transformation matrix 
         function trObject(self, tr)
-             self.pose = self.pose * tr;
-             transformedVertices = [self.vertices,ones(size(self.vertices,1),1)] * tr';
+             self.pose = self.pose * self.offset * tr;
+             transformedVertices = [self.vertices,ones(size(self.vertices,1),1)]* self.offset' * tr';
              set(self.mesh_h,'Vertices',transformedVertices(:,1:3));
         end
     end

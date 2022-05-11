@@ -8,6 +8,7 @@ qr = [0 0 0 0 -pi/2 pi/2 0]
 bot = Sawyer(0,0,0.2, true);
 axis([-1 1 -1 1 -0.2 1])
 hold on
+Bottle = PlyObject('Bottle.ply', [0,2.9,0.9], pi/2);
 bot.model.plot(qr, 'scale', 0.7);
 bot.model.teach();
 

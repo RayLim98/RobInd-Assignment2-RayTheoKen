@@ -12,12 +12,18 @@ classdef Sawyer < handle
         % Manually found for waypoints
         qr = [0 0 0 0 pi/2 -pi/2 0];            % Readsy position
         qOp = [0 -3.0543 0 0.1187 0 1.7453 0];  % Operation Position
+        qOpPosition1 = [1.9388   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
+        qOpPosition2 = [ -1.0996   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
         qCup = [1.0385 -1.9437 0 1.5429 0 2.0320 0];      % Cup Position
+
+        % Interpolation
+        rStep = 5*pi/180 % radian steps
     end
     
     methods
         %% Class for UR5 robot simulation
         function self = Sawyer(x,y,z, test);
+            tic;
             if nargin < 4
                 self.GetSawyerRobot(x,y,z);
                 self.PlotAndColourRobot();
@@ -29,6 +35,8 @@ classdef Sawyer < handle
                    self.PlotAndColourRobot();
                 end
             end
+            display(['Sawyer Robot rendered: ', 'Duration: ',num2str(toc)]);
+            
         end
 
         %% GetUR3dRobot
@@ -96,45 +104,70 @@ classdef Sawyer < handle
             qf = self.model.ikcon(tr,q0,mask);
             qM = jtraj(q0,qf,50);
         end
+        %% Generate Trajectory through final Joint config
+        function [qM] = genTrajQ(self,qf)
+            q0 = self.model.getpos();
+            qM = jtraj(q0,qf,50);
+        end
         %% Generate Trajectory RMRC
-        function [qM] = genTrajRMRC(self, xf)
+        function [qM] = GenTrajRMRC(self, xf)
             steps = 30;
             deltaT = 0.05;
-
             % Current Joint config
-            qCurrent = self.model.getpos;
             % Current pose
+            qCurrent = self.model.getpos;
             tr = self.model.fkine(qCurrent);
 
             % Interpolate from point to point
             x1 = tr(1:3,4);
             x = zeros(3,steps);
-            s = lspb(0,1,steps);                                 % Create interpolation scalar
+%             theta = zeros(3,steps);
+            qdot = zeros(steps,7);                                          % Array for joint velocities       
+            s = lspb(0,1,steps);                                            % Create interpolation scalar
             for i = 1:steps
-                x(:,i) = x1*(1-s(i)) + s(i)*xf;                  % Create trajectory in x-y plane
+                x(:,i) = x1*(1-s(i)) + s(i)*xf;                             % Create trajectory in x-y plane
+%                 theta(:,i) = theta0*(1-s(i)) + s(i)*thetaF;
             end
 
             % Gen trajectory
             qM = nan(steps, 7);
             qM(1,:) = self.model.ikcon(tr,qCurrent);
-
+            
             for i = 1:steps-1
-                xdot = (x(:,i+1) - x(:,i))/deltaT;                             % Calculate velocity at discrete time step
-                J = self.model.jacob0(qM(i,:));            % Get the Jacobian at the current state
-                qdot = J'*sqrt(J*J')*[xdot';0;0;0];                             % Solve velocitities via RMRC
-                qM(i+1,:) =  qM(i,:) + deltaT*qdot';                   % Update next joint state
+%                 T = bot.model.fkine(qM(i,:));
+%                 Rd = rpy2r(theta(1,i+1),theta(2,i+1),theta(3,i+1));         % Get next RPY angles, convert to rotation matrix
+%                 Ra = T(1:3,1:3);                                            % Current end-effector rotation matrix
+%                 Rdot = (1/deltaT)*(Rd - Ra);
+%                 S = Rdot*Ra';
+                lin_vel = (x(:,i+1) - x(:,i))/deltaT;
+                ang_vel = [0;0;0];
+                xdot = [lin_vel; ang_vel]; 
+                J = self.model.jacob0(qM(i,:));              
+                
+                % Cal inv J for redundant machine
+                invJ = J'*inv(J*J');
+                % Calc joint speed
+                qdot(i,:) = invJ*xdot;       
+                for j = 1:7                                                 % Loop through joints 1 to 6
+                    if qM(i,j) + deltaT*qdot(i,j) < self.model.qlim(j,1)     % If next joint angle is lower than joint limit...
+                        qdot(i,j) = 0;                                      % Stop the motor
+                    elseif qM(i,j) + deltaT*qdot(i,j) > ...
+                        self.model.qlim(j,2) % If next joint angle is greater than joint limit ...
+                        qdot(i,j) = 0;                                      % Stop the motor
+                    end
+                end
+                qM(i+1,:) =  qM(i,:) + deltaT*qdot(i,:);  
             end
         end
-
         %% Go to ready pose 
-        function GoToReadyPose(self)
+        function [qM] = GoToReadyPose(self)
             display('Return to waiting position')
             qCurrent = self.model.getpos;
             qReady = self.qOp;    
+            qReady(1) = qCurrent(1);
             qM = jtraj(qCurrent, qReady, 20);
-            self.model.plot3d(qM)
         end  
-        %% Go to ready pose 
+        %% Go to Cup pose 
         function [qM] = GoToCupTrajectory(self)
             display('Reaching for cup')
             % q0 to take into account of the current pose
@@ -152,7 +185,7 @@ classdef Sawyer < handle
             qWayPoints = [q0;q1;q2];
             
             % Generate way points
-            qM = InterpolateWaypointsRadians(qWayPoints, 5*pi/180);
+            qM = InterpolateWaypointsRadians(qWayPoints, self.rStep);
 
             % Check qM forCollision detection
             % TODO: Colision detection 
@@ -161,13 +194,49 @@ classdef Sawyer < handle
 %             self.model.plot3d(qM)
         end  
         %% First order way point 
-        function StartOrderTrajectory(self)
-            display('Starting order')
-            
+        function StartOrderTrajectory(self, object)
+            tic
+            display('Reaching for Cup')
+            qM1 = self.GoToCupTrajectory();
+            self.model.plot3d(qM1)
+
+            display('Returning to home position')
+            % Now holding Cup 
+            qM2 = self.GoToReadyPose();
+            self.AnimateTrajectoryWObject(qM2,object);
+
+            display('Fufilling order 1, Premium pearl')
+            qM3 = InterpolateWaypointsRadians([self.model.getpos;self.qOpPosition1], self.rStep);
+            self.AnimateTrajectoryWObject(qM3, object);
+
+            display('Adding stuff..')
+            p1 = [-0.6, 2.4, 1]; % to be deleted 
+            qM4 =  self.GenTrajRMRC(p1');
+            self.AnimateTrajectoryWObject(qM4, object);
+            pause(2);
+            qM4Return = flip(qM4);
+            self.AnimateTrajectoryWObject(qM4Return, object);
+    
+            p2 = [-0.6, 1.85, 1]; % to be deleted
+            qM5 =  self.GenTrajRMRC(p2');
+            self.AnimateTrajectoryWObject(qM5, object);
+            pause(2);
+            qM5Return = flip(qM5);
+            self.AnimateTrajectoryWObject(qM5Return, object);
+            display('Completed Order')
+
         end
-        function StartOrderTrajectory2(self)
-            display('Starting order')
-            
+
+        %% Animate 
+        function AnimateTrajectoryWObject(self, qM, object)
+            for i = 1: size(qM,1)
+                % set current pose
+                q = qM(i,:);
+                tr = self.model.fkine(q);
+                % animate
+                self.model.animate(q);
+                object.trObject(tr);
+            end
         end
          %% Default position
          function resetJoints(self)
