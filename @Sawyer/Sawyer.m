@@ -10,12 +10,13 @@ classdef Sawyer < handle
 
         % Positions
         % Manually found for waypoints
-        qr = [0 0 0 0 pi/2 -pi/2 0];            % Readsy position
-        qOp = [0 -3.0543 0 0.1187 0 1.7453 0];  % Operation Position
-        qOpPosition1 = [1.9388   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
-        qOpPosition2 = [ -1.0996   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
-        qCup = [1.0385 -1.9437 0 1.5429 0 2.0320 0];      % Cup Position
-
+        qr = [0 0 0 0 pi/2 -pi/2 0];            % Ready position
+        qOp = [0 -3.0543 0 0.1187 0 1.7453 0];  % Default Operation Position
+        qOpPosition1 = [1.9388   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]     % Left position
+        qOpPosition2 = [ -1.0996   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]   % Right position
+        qCup = [1.0385 -1.9437 0 1.5429 0 2.0320 0];                                            % Cup Position
+        qDrop = [-2.8194   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
+        
         % Interpolation
         rStep = 5*pi/180 % radian steps
     end
@@ -162,10 +163,10 @@ classdef Sawyer < handle
         %% Go to ready pose 
         function [qM] = GoToReadyPose(self)
             display('Return to waiting position')
-            qCurrent = self.model.getpos;
-            qReady = self.qOp;    
-            qReady(1) = qCurrent(1);
-            qM = jtraj(qCurrent, qReady, 20);
+            q0 = self.model.getpos;
+            q1 = self.qOp;    
+            q1(1) = q0(1);
+            qM = jtraj(q0, q1, 20);
         end  
         %% Go to Cup pose 
         function [qM] = GoToCupTrajectory(self)
@@ -193,8 +194,8 @@ classdef Sawyer < handle
             % Commence trajectory
 %             self.model.plot3d(qM)
         end  
-        %% First order way point 
-        function StartOrderTrajectory(self, object)
+        %% Order way point 
+        function StartOrderTrajectory(self, object, order)
             tic
             display('Reaching for Cup')
             qM1 = self.GoToCupTrajectory();
@@ -204,29 +205,57 @@ classdef Sawyer < handle
             % Now holding Cup 
             qM2 = self.GoToReadyPose();
             self.AnimateTrajectoryWObject(qM2,object);
+   
 
-            display('Fufilling order 1, Premium pearl')
-            qM3 = InterpolateWaypointsRadians([self.model.getpos;self.qOpPosition1], self.rStep);
-            self.AnimateTrajectoryWObject(qM3, object);
+            display(['Fufilling order: , ', order.name])
+            for i = 1: size(order.containerLocations,1)
+                container = order.containerLocations(i,:);
+                
+                % Locatate which direction the bot needs to turn to using
+                % the x value of the container
+                if container(1) > 0
+                    qPrePosition = self.qOpPosition2;
+                    qM3 = InterpolateWaypointsRadians([self.model.getpos;qPrePosition], self.rStep);
+                    self.AnimateTrajectoryWObject(qM3, object);
+                else
+                    qPrePosition = self.qOpPosition1;
+                    qM3 = InterpolateWaypointsRadians([self.model.getpos;qPrePosition], self.rStep);
+                    self.AnimateTrajectoryWObject(qM3, object);
+                end
 
-            display('Adding stuff..')
-            p1 = [-0.6, 2.4, 1]; % to be deleted 
-            qM4 =  self.GenTrajRMRC(p1');
-            self.AnimateTrajectoryWObject(qM4, object);
-            pause(2);
-            qM4Return = flip(qM4);
-            self.AnimateTrajectoryWObject(qM4Return, object);
-    
-            p2 = [-0.6, 1.85, 1]; % to be deleted
-            qM5 =  self.GenTrajRMRC(p2');
-            self.AnimateTrajectoryWObject(qM5, object);
-            pause(2);
-            qM5Return = flip(qM5);
-            self.AnimateTrajectoryWObject(qM5Return, object);
+                % Use RMRC trajectory to 
+                qM4 = self.GenTrajRMRC(container');
+                self.AnimateTrajectoryWObject(qM4, object);
+                pause(2);
+                qM4Return = flip(qM4);
+                self.AnimateTrajectoryWObject(qM4Return, object);
+            end
+%             pfinal = [0, 1.4, 1];
+            self.DropOffPayload(object);
             display('Completed Order')
-
         end
 
+        %% DropOff payload 
+        function DropOffPayload(self,object)
+            % Got to drop of position. 
+            qCurrent = self.model.getpos;
+            qM1 = InterpolateWaypointsRadians([qCurrent;self.qDrop], self.rStep);
+            self.AnimateTrajectoryWObject(qM1,object);
+            
+            % Drop off
+            pDrop = [0, 1.4, 1];
+            qM2 = self.GenTrajRMRC(pDrop');
+            self.AnimateTrajectoryWObject(qM2,object);
+
+            % Return position
+            qM2Return = flip(qM2);
+            self.model.animate(qM2Return);
+
+            % Return to home position
+            qCurrent = self.model.getpos;
+            qM2Home = InterpolateWaypointsRadians([qCurrent;self.qOp],self.rStep);
+            self.model.animate(qM2Home);
+        end
         %% Animate 
         function AnimateTrajectoryWObject(self, qM, object)
             for i = 1: size(qM,1)
