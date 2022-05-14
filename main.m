@@ -1,7 +1,7 @@
 function main()
 %% ENV SETUP
 m_env_setup
-%%
-mdl_puma560
+%% GUI SETIP
+GUI
 
 end
