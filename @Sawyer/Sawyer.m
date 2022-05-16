@@ -37,7 +37,6 @@ classdef Sawyer < handle
                 end
             end
             display(['Sawyer Robot rendered: ', 'Duration: ',num2str(toc)]);
-            
         end
 
         %% GetUR3dRobot
@@ -122,12 +121,10 @@ classdef Sawyer < handle
             % Interpolate from point to point
             x1 = tr(1:3,4);
             x = zeros(3,steps);
-%             theta = zeros(3,steps);
             qdot = zeros(steps,7);                                          % Array for joint velocities       
             s = lspb(0,1,steps);                                            % Create interpolation scalar
             for i = 1:steps
                 x(:,i) = x1*(1-s(i)) + s(i)*xf;                             % Create trajectory in x-y plane
-%                 theta(:,i) = theta0*(1-s(i)) + s(i)*thetaF;
             end
 
             % Gen trajectory
@@ -135,11 +132,6 @@ classdef Sawyer < handle
             qM(1,:) = self.model.ikcon(tr,qCurrent);
             
             for i = 1:steps-1
-%                 T = bot.model.fkine(qM(i,:));
-%                 Rd = rpy2r(theta(1,i+1),theta(2,i+1),theta(3,i+1));         % Get next RPY angles, convert to rotation matrix
-%                 Ra = T(1:3,1:3);                                            % Current end-effector rotation matrix
-%                 Rdot = (1/deltaT)*(Rd - Ra);
-%                 S = Rdot*Ra';
                 lin_vel = (x(:,i+1) - x(:,i))/deltaT;
                 ang_vel = [0;0;0];
                 xdot = [lin_vel; ang_vel]; 
