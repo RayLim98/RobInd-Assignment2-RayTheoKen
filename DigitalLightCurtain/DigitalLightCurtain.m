@@ -1,6 +1,6 @@
 classdef DigitalLightCurtain
     %CAM Summary of this class goes here
-    %   Detailed explanation goes here
+    %Detailed explanation goes here
     
     properties
         vertex
@@ -11,8 +11,8 @@ classdef DigitalLightCurtain
     methods
         % Called when i'm created
         function self = DigitalLightCurtain()
-            centerpnt = [3.8,0,0.05];
-            side = 2;
+            centerpnt = [0,2.6,0.5];
+            side = 1.7;
             plotOptions.plotFaces = true; 
             [vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions);
             self.vertex = vertex;
@@ -20,8 +20,8 @@ classdef DigitalLightCurtain
             self.faceNormals = faceNormals;
         end
         
-        function isBreached = isBreached(self, robot, qM)
-            state = CollisionExist(robot, qM, self.vertex, self.faces, self.faceNormals) == true;
+        function isBreached = isBreached(self, p2, qM)
+            state = CollisionExist(p2, qM, self.vertex, self.faces, self.faceNormals) == true;
             if ~state
                 display('UR GOOD')
             else
