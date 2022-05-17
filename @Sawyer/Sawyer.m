@@ -8,9 +8,8 @@ classdef Sawyer < handle
         canOperate = true;
         isHolding = false;
 
-        % Positions
-        % Manually found for waypoints
-        qr = [0 0 0 0 pi/2 -pi/2 0];            % Readsy position
+        % Positions and end point goals 
+        qr = [0 0 0 0 pi/2 -pi/2 0];            % Ready position
         qOp = [0 -3.0543 0 0.1187 0 1.7453 0];  % Operation Position
         qOpPosition1 = [1.9388   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
         qOpPosition2 = [ -1.0996   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
@@ -42,11 +41,9 @@ classdef Sawyer < handle
 
         %% GetUR3dRobot
         function GetSawyerRobot(self, x, y, z)
-        %     if nargin < 1
-                % Create a unique name (ms timestamp after 1ms pause)
-                pause(0.001);
-                name = ['SawyerBot',datestr(now,'yyyymmddTHHMMSSFFF')];
-        %     end
+            % Create a unique name (ms timestamp after 1ms pause)
+            pause(0.001);
+            name = ['SawyerBot',datestr(now,'yyyymmddTHHMMSSFFF')];
 
             L(1) = Link('d',0.237,  'a',0.081,   'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
             L(2) = Link('d',0.1925, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);    
@@ -199,7 +196,7 @@ classdef Sawyer < handle
             qM2 = self.GoToReadyPose();
             self.AnimateTrajectoryWObject(qM2,object);
    
-            display(['Fufilling order: , ', order.name])
+            display(['Fufilling order: ', order.name])
             for i = 1: size(order.containerLocations,1)
                 container = order.containerLocations(i,:);
                 
@@ -226,6 +223,7 @@ classdef Sawyer < handle
             self.DropOffPayload(object);
             display('Completed Order')
         end
+
         %% DropOff payload 
         function DropOffPayload(self,object)
             % Got to drop of position. 
@@ -247,21 +245,45 @@ classdef Sawyer < handle
             qM2Home = InterpolateWaypointsRadians([qCurrent;self.qOp],self.rStep);
             self.model.animate(qM2Home);
         end
-        %% Animate 
+
+        %% Animate Trajectory with Object
         function AnimateTrajectoryWObject(self, qM, object)
+            % Check if the robot should keep operating. Else break
             for i = 1: size(qM,1)
-                % set current pose
-                q = qM(i,:);
-                tr = self.model.fkine(q);
-                % animate
-                self.model.animate(q);
-                object.trObject(tr);
+                % Check if the robot should keep operating
+                if self.canOperate
+                    % set current pose
+                    q = qM(i,:);
+                    tr = self.model.fkine(q);
+                    % animate
+                    self.model.animate(q);
+                    object.trObject(tr);
+                else
+                    break;
+                end
             end
         end
+
+        %% Animate Trajectory
+        function AnimateTrajectory(self, qM)
+            % Check if the robot should keep operating. Else break
+            for i = 1: size(qM,1)
+                if self.canOperate
+                    % set current pose
+                    q = qM(i,:);
+                    % animate
+                    self.model.animate(q);
+                else
+                    break;
+                end
+            end
+        end
+
          %% Default position
          function resetJoints(self)
             self.model.plot(self.qr);
          end
+
         %% Sawyer rotation for teach function
         function SawyerMove(self, link, rad)
 %            DegtoRad = degree*pi/180;
@@ -273,5 +295,6 @@ classdef Sawyer < handle
            self.model.animate(SawyerMove);
            drawnow();
         end
+
     end
 end
