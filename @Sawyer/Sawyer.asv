@@ -8,9 +8,9 @@ classdef Sawyer < handle
         canOperate = true;
         isHolding = false;
 
-        % Positions
-        % Manually found for waypoints
-        qr = [0 0 0 0 pi/2 -pi/2 0];            % Readsy position
+        % Positions and end point goals 
+        qz = [0 0 0 0 0 0 0]
+        qr = [0 0 0 0 pi/2 -pi/2 0];            % Ready position
         qOp = [0 -3.0543 0 0.1187 0 1.7453 0];  % Operation Position
         qOpPosition1 = [1.9388   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
         qOpPosition2 = [ -1.0996   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
@@ -197,7 +197,7 @@ classdef Sawyer < handle
             qM2 = self.GoToReadyPose();
             self.AnimateTrajectoryWObject(qM2,object);
    
-            display(['Fufilling order: , ', order.name])
+            display(['Fufilling order: ', order.name])
             for i = 1: size(order.containerLocations,1)
                 container = order.containerLocations(i,:);
                 
@@ -224,6 +224,7 @@ classdef Sawyer < handle
             self.DropOffPayload(object);
             display('Completed Order')
         end
+
         %% DropOff payload 
         function DropOffPayload(self,object)
             % Got to drop of position. 
@@ -245,9 +246,12 @@ classdef Sawyer < handle
             qM2Home = InterpolateWaypointsRadians([qCurrent;self.qOp],self.rStep);
             self.model.animate(qM2Home);
         end
+
         %% Animate Trajectory with Object
         function AnimateTrajectoryWObject(self, qM, object)
+            % Check if the robot should keep operating. Else break
             for i = 1: size(qM,1)
+                % Check if the robot should keep operating
                 if self.canOperate
                     % set current pose
                     q = qM(i,:);
@@ -260,8 +264,10 @@ classdef Sawyer < handle
                 end
             end
         end
+
         %% Animate Trajectory
         function AnimateTrajectory(self, qM)
+            % Check if the robot should keep operating. Else break
             for i = 1: size(qM,1)
                 if self.canOperate
                     % set current pose
@@ -278,6 +284,7 @@ classdef Sawyer < handle
          function resetJoints(self)
             self.model.plot(self.qr);
          end
+
         %% Sawyer rotation for teach function
         function SawyerMove(self, link, rad)
 %            DegtoRad = degree*pi/180;
@@ -289,5 +296,6 @@ classdef Sawyer < handle
            self.model.animate(SawyerMove);
            drawnow();
         end
+
     end
 end
