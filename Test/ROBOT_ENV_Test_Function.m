@@ -15,10 +15,7 @@ qRedF = [ 1.4336   -0.4312    0.2666    0.8083   -0.0242    2.6180   -0.5993];
 qCup = [1.0385   -1.9437         0    1.5429         0    2.0320         0];
 
 trBlue = transl(-0.6,2.4,1);
-% qM = sBot.genTraj(trCup);
-% qM = jtraj(sBot.model.getpos, qCup,50);
 
-% sBot.GoToReadyPose;
 qM = sBot.GoToCupTrajectory();
 sBot.model.plot3d(qM);
 
