@@ -31,7 +31,7 @@ camlight
 %             ; 0,-1,0 ...
 %             ;1,0,0];
 robot.teach;
-
+%%
 % 2.4: Get the transform of every joint (i.e. start and end of every link)
 tr = zeros(4,4,robot.n+1);
 tr(:,:,1) = robot.base;
