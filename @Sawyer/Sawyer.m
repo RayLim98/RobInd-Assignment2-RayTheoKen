@@ -189,10 +189,12 @@ classdef Sawyer < handle
         %% Order way point 
         function StartOrderTrajectory(self, object, order)
             tic
+            qC = self.model.getpos();
+            self.model.plot3d(qC, 'view', [45 45]);
+
             display('Reaching for Cup')
             qM1 = self.GenCupTrajectory();
-            self.model.plot3d(qM1,'view',[45, 45])
-            
+            self.AnimateTrajectory(qM1)
 
             display('Returning to home position')
             % Now holding Cup 
@@ -241,12 +243,11 @@ classdef Sawyer < handle
 
             % Return position
             qM2Return = flip(qM2);
-            self.model.animate(qM2Return);
+            self.AnimateTrajectory(qM2Return)
 
             % Return to home position
             qCurrent = self.model.getpos;
             qM2Home = InterpolateWaypointsRadians([qCurrent;self.qOp],self.rStep);
-%             self.model.animate(qM2Home);
             self.AnimateTrajectory(qM2Home)
         end
 
