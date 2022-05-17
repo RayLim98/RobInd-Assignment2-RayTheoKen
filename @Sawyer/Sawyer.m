@@ -9,11 +9,11 @@ classdef Sawyer < handle
         isHolding = false;
 
         % Positions and end point goals 
-        qr = [0 0 0 0 pi/2 -pi/2 0];            % Ready position
-        qOp = [0 -3.0543 0 0.1187 0 1.7453 0];  % Operation Position
+        qr = [0 0 0 0 pi/2 -pi/2 0];                                                            % Ready position
+        qOp = [0 -3.0543 0 0.1187 0 1.7453 0];                                                  % Operation Position
         qOpPosition1 = [1.9388   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
         qOpPosition2 = [ -1.0996   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
-        qCup = [1.0385 -1.9437 0 1.5429 0 2.0320 0];      % Cup Position
+        qCup = [1.0385 -1.9437 0 1.5429 0 2.0320 0];                                            % Cup Position
         qDrop = [-2.8194   -3.0543   -1.2217    0.1187   -2.3504    1.4486   -0.0942]
         
         % Interpolation
