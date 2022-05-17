@@ -7,8 +7,8 @@ function [  ] = p2SPawn( )
 %close all;
 
 
-a1 = 1.0; %Link 1 length 
-a2 = 0.8; %Link 2 length
+a1 = 0.5; %Link 1 length 
+a2 = 0.4; %Link 2 length
 
 
 p2 = SerialLink([

@@ -31,9 +31,9 @@ surf(xImage,yImage,zImage,...       % Plot the surface
  
  % Render background as image
 img = imread('mall.jpeg');     
-xImage = [2 2; -2 -2];              % The x data for the image corners
-yImage = [-0.5 -0.5; -0.5 -0.5];              % The y data for the image corners
-zImage = [0 1.5; 0 1.5];                % The z data for the image corners
+xImage = [2 -2; -2 2];              % The x data for the image corners
+yImage = [-2 -2; -2 -2];              % The y data for the image corners
+zImage = [1.5 1.5; 0 0];                % The z data for the image corners
 surf(xImage,yImage,zImage,...       % Plot the surface
      'CData',img,...
      'FaceColor','texturemap');
@@ -58,7 +58,9 @@ p2 = SerialLink([
 q = zeros(1,2);%use this instead
 scale = 0.5; 
 workspace = [-2 2 -2 2 -0.1 2];                                       % Set the size of the workspace when drawing the robot
+p2.base = transl(1,1,1);
 p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
+
 p2.teach;
 %/////////////////////////////////////////////////
 
