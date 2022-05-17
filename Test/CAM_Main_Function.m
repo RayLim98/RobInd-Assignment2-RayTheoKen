@@ -8,8 +8,8 @@ clc
 % clf
 close all;
 
-% 2.1: Make a 3DOF model
-L1 = Link('d',0,'a',0.7,'alpha',0,'qlim',[-pi pi]);
+% 2.1: Make a 2DOF model
+L1 = Link('d',0,'a',0.7,'alpha',pi/2,'qlim',[-pi pi]);
 L2 = Link('d',0,'a',0.7,'alpha',0,'qlim',[-pi pi]);
 
 robot = SerialLink([L1 L2 ],'name','myRobot');                     
@@ -23,7 +23,8 @@ centerpnt = [2,0,0.05];
 side = 2;
 plotOptions.plotFaces = true;
 visible_box = true;%change to false to make workspace cube invisible
-[vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions);
+[vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions,visible_box);
+%[vertex,face,faceNormals] = WorkSpaceCube(lower,upper,plotOptions,axis_h,visible_box)
 axis equal
 camlight
 % pPoints = [1.25,0,-0.5 ...
@@ -36,6 +37,7 @@ camlight
 %             ;1,0,0];
 robot.teach;
 
+%%
 % 2.4: Get the transform of every joint (i.e. start and end of every link)
 tr = zeros(4,4,robot.n+1);
 tr(:,:,1) = robot.base;
@@ -72,22 +74,6 @@ for i = 1: steps
     result(i) = IsCollision(robot,qMatrix(i,:),faces,vertex,faceNormals,false);
     robot.animate(qMatrix(i,:));
 end
-
-
-% % % %%
-% % % L1 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-% % % L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-% % % 
-% % % robot = SerialLink([L1 L2 ],'name','HumanEmployee');                     
-% % % q = zeros(1,2);  
-% % % 
-% % % q1 = [-pi/4,0,0];
-% % % q2 = [pi/4,0,0];
-% % % % % % scale = 0.5;
-% % %  workspace = [-4 5 -4 4 -2.1 3];                                       % Set the size of the workspace when drawing the robot
-% % % robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
-% % % % % %personReach.plot(qz,qn);                  % Plot the robot
-% % % % % % personReach.teach
 
 
 %% Creating a cube and use teach to see collision detection
@@ -263,15 +249,4 @@ for i = 1: size(waypointRadians,1)-1
 end
 end
 
-% % % %% Confirm Collision
-% % % 
-% % % %check each joint states in the trajectory to work out which ones are in
-% % % %collisions
-% % % % 0 = no collision
-% % % % 1 = yes collision (unsafe)
-% % % 
-% % % result = true(steps,1)
-% % % for i = 1:steps
-% % %     result(i) = CollisionCheck(robot,q1,q2);
-% % % end
 
