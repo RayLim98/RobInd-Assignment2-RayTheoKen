@@ -5,25 +5,75 @@ clf
 clc
 
 
-L1 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+% clf
+close all;
 
-robot = SerialLink([L1 L2 ],'name','HumanEmployee');                     
+% 2.1: Make a 2DOF model
+L1 = Link('d',0,'a',0.7,'alpha',pi/2,'qlim',[-pi pi]);
+L2 = Link('d',0,'a',0.7,'alpha',0,'qlim',[-pi pi]);
+
+robot = SerialLink([L1 L2 ],'name','myRobot');                     
 q = zeros(1,2);                                                     % Create a vector of initial joint angles        
-q_init = [0 0 0]; %starting q parameters
-person1_traj = transl(0.5,0,0.8);
-
-% % % q1 = [-pi/4,0,0];
-% % % q2 = [pi/4,0,0];
-
 scale = 0.5;
-workspace = [-4 5 -4 4 -0.1 3];                                       % Set the size of the workspace when drawing the robot
+workspace = [-3 3 -3 3 -4 4];                                       % Set the size of the workspace when drawing the robot
 robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
 
-%% Create Light Curtain Wall
+% 2.2 and 2.3
+centerpnt = [2,0,0.05];
+side = 2;
+plotOptions.plotFaces = true;
+visible_box = true;%change to false to make workspace cube invisible
+[vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions,visible_box);
+%[vertex,face,faceNormals] = WorkSpaceCube(lower,upper,plotOptions,axis_h,visible_box)
+axis equal
+camlight
+% pPoints = [1.25,0,-0.5 ...
+%         ;2,0.75,-0.5 ...
+%         ;2,-0.75,-0.5 ...
+%         ;2.75,0,-0.5];
+% pNormals = [-1,0,0 ...
+%             ; 0,1,0 ...
+%             ; 0,-1,0 ...
+%             ;1,0,0];
+robot.teach;
 
-% % % wall = LightCurtainWall(1, 2, [0 1.9 -0.5]);
-% % % hold on
+%%
+% 2.4: Get the transform of every joint (i.e. start and end of every link)
+tr = zeros(4,4,robot.n+1);
+tr(:,:,1) = robot.base;
+L = robot.links;
+for i = 1 : robot.n
+    tr(:,:,i+1) = tr(:,:,i) * trotz(q(i)+L(i).offset) * transl(0,0,L(i).d) * transl(L(i).a,0,0) * trotx(L(i).alpha);
+end
+
+for i = 1 : size(tr,3)-1    
+    for faceIndex = 1:size(faces,1)
+        vertOnPlane = vertex(faces(faceIndex,1)',:);
+        [intersectP,check] = LinePlaneIntersection(faceNormals(faceIndex,:),vertOnPlane,tr(1:3,4,i)',tr(1:3,4,i+1)'); 
+        if check == 1 && IsIntersectionPointInsideTriangle(intersectP,vertex(faces(faceIndex,:)',:))
+            plot3(intersectP(1),intersectP(2),intersectP(3),'g*');
+            display('Get Back Fool!');
+        else
+            display('Ur Good');
+        end
+    end    
+end
+
+% 2.6: Go through until there are no step sizes larger than 1 degree
+q1 = [-pi/4,0,0];
+q2 = [pi/4,0,0];
+steps = 20;
+while ~isempty(find(1 < abs(diff(rad2deg(jtraj(q1,q2,steps)))),1))
+    steps = steps + 1;
+end
+qMatrix = jtraj(q1,q2,steps);
+
+% 2.7
+result = true(steps,1);
+for i = 1: steps
+    result(i) = IsCollision(robot,qMatrix(i,:),faces,vertex,faceNormals,false);
+    robot.animate(qMatrix(i,:));
+end
 
 
 %% Creating a cube and use teach to see collision detection
@@ -41,19 +91,19 @@ camlight
 %             ; 0,1,0 ...
 %             ; 0,-1,0 ...
 %             ;1,0,0];
-robot.teach;
-
-hold on
+% % % robot.teach;
+% % % 
+% % % hold on
 
 
 % 2.4: Get the transform of every joint (i.e. start and end of every link)
-tr = zeros(4,4,robot.n+1);
+tr = zeros(4,4,robot.n+1);  
 tr(:,:,1) = robot.base;
 L = robot.links;
 for i = 1 : robot.n
     tr(:,:,i+1) = tr(:,:,i) * trotz(q(i)+L(i).offset) * transl(0,0,L(i).d) * transl(L(i).a,0,0) * trotx(L(i).alpha);
 end
-
+    
 % 2.5: Go through each link and also each triangle face
 for i = 1 : size(tr,3)-1    
     for faceIndex = 1:size(faces,1)
@@ -67,20 +117,20 @@ for i = 1 : size(tr,3)-1
 end
 
 % 2.6: Go through until there are no step sizes larger than 1 degree
-% % % q1 = [-pi/4,0,0];
-% % % q2 = [pi/4,0,0];
-% % % steps = 20;
-% % % while ~isempty(find(1 < abs(diff(rad2deg(jtraj(q1,q2,steps)))),1))
-% % %     steps = steps + 1;
-% % % end
-% % % qMatrix = jtraj(q1,q2,steps); 
-q
+q1 = [-pi/4,0,0];
+q2 = [pi/4,0,0];
+steps = 20;
+while ~isempty(find(1 < abs(diff(rad2deg(jtraj(q1,q2,steps)))),1))
+    steps = steps + 1;
+end
+qMatrix = jtraj(q1,q2,steps); %storing the trajectory of q1 and q2 in matrix
+
 
 % 2.7
 result = true(steps,1);
 for i = 1: steps
     result(i) = IsCollision(robot,qMatrix(i,:),faces,vertex,faceNormals,false);
-    robot.animate(qMatrix(i,:));
+    robot.animate(qMatrix(i,:)); %animate the transformation
 end
 
 %% IsIntersectionPointInsideTriangle
@@ -199,15 +249,4 @@ for i = 1: size(waypointRadians,1)-1
 end
 end
 
-% % % %% Confirm Collision
-% % % 
-% % % %check each joint states in the trajectory to work out which ones are in
-% % % %collisions
-% % % % 0 = no collision
-% % % % 1 = yes collision (unsafe)
-% % % 
-% % % result = true(steps,1)
-% % % for i = 1:steps
-% % %     result(i) = CollisionCheck(robot,q1,q2);
-% % % end
 

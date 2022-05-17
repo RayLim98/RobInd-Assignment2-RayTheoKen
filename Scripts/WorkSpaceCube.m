@@ -1,4 +1,4 @@
-function [vertex,face,faceNormals] = WorkSpaceCube(lower,upper,plotOptions,axis_h)
+function [vertex,face,faceNormals] = WorkSpaceCube(lower,upper,plotOptions,axis_h,visible_box)
 if nargin<4
         axis_h=gca;
     if nargin<3
@@ -25,8 +25,14 @@ face=[1,2,3;1,3,7;
      2,4,8;2,3,8;
      3,7,5;3,8,5;
      6,5,8;6,4,8];
- 
- FaceAlpha = 0.1;
+% % %  
+% % %  if visible_box == true
+% % %      FaceAlpha = 0.11;
+% % %  else
+% % %      FaceAlpha = 0.01;
+% % %  end
+
+    FaceAlpha = 0.1;
 
 if 2 < nargout    
     faceNormals = zeros(size(face,1),3);
