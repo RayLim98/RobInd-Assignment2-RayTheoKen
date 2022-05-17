@@ -7,6 +7,10 @@ classdef Sawyer < handle
         useGripper = false;
         canOperate = true;
         isHolding = false;
+        holdingIndex = 0;
+        releaseIndex = 0;
+        qMResume = [];
+        idxResume = 0;
 
         % Positions and end point goals 
         qr = [0 0 0 0 pi/2 -pi/2 0];                                                            % Ready position
@@ -23,7 +27,7 @@ classdef Sawyer < handle
     
     methods
         %% Class for UR5 robot simulation
-        function self = Sawyer(x,y,z, test);
+        function self = Sawyer(x,y,z, test)
             tic;
             if nargin < 4
                 self.GetSawyerRobot(x,y,z);
@@ -109,12 +113,12 @@ classdef Sawyer < handle
         end
         
         %% Generate Trajectory RMRC
-        function [qM] = GenTrajRMRC(self, xf)
+        function [qM] = GenTrajRMRC(self, q0 ,xf)
             steps = 30;
             deltaT = 0.05;
             % Current Joint config
             % Current pose
-            qCurrent = self.model.getpos;
+            qCurrent = q0;
             tr = self.model.fkine(qCurrent);
 
             % Interpolate from point to point
@@ -151,19 +155,24 @@ classdef Sawyer < handle
                 qM(i+1,:) =  qM(i,:) + deltaT*qdot(i,:);  
             end
         end
+        
         %% Go to ready pose 
-        function [qM] = GoToReadyPose(self)
+        function [qM] = GoToReadyPose(self, q0)
             display('Return to waiting position')
-            qCurrent = self.model.getpos;
+            % Get current position
+            qCurrent = q0;
+            % Get ready operation pose
             qReady = self.qOp;    
+            % Retain facing direction pose
             qReady(1) = qCurrent(1);
+            % Gen trajectory
             qM = jtraj(qCurrent, qReady, 20);
         end  
 
         %% Go to Cup pose 
         function [qM] = GenCupTrajectory(self)
             display('Reaching for cup')
-            % q0 to take into account of the current pose
+%             q0 to take into account of the current pose
             q0 = self.model.getpos;
             
             % q1 to ready it for the working position
@@ -189,19 +198,20 @@ classdef Sawyer < handle
         %% Order way point 
         function StartOrderTrajectory(self, object, order)
             tic
+            % Reach for cup
+            display('Generating cup reach traj')
             qC = self.model.getpos();
             self.model.plot3d(qC, 'view', [45 45]);
-
-            display('Reaching for Cup')
+            qM = [];
             qM1 = self.GenCupTrajectory();
-            self.AnimateTrajectory(qM1)
+            qM = [qM; qM1];
 
-            display('Returning to home position')
             % Now holding Cup 
-            qM2 = self.GoToReadyPose();
-            self.AnimateTrajectoryWObject(qM2,object);
-   
-            display(['Fufilling order: ', order.name])
+            qM2 = self.GoToReadyPose(qM1(end,:));
+            self.holdingIndex = size(qM1,1);
+            qM = [qM; qM2];
+                        
+            display('Generating flavor trajectory with RMRC')
             for i = 1: size(order.containerLocations,1)
                 container = order.containerLocations(i,:);
                 
@@ -209,61 +219,83 @@ classdef Sawyer < handle
                 % the x value of the container
                 if container(1) > 0
                     qPrePosition = self.qOpPosition2;
-                    qM3 = InterpolateWaypointsRadians([self.model.getpos;qPrePosition], self.rStep);
-                    self.AnimateTrajectoryWObject(qM3, object);
+                    qM3 = InterpolateWaypointsRadians([qM(end,:);qPrePosition], self.rStep);
+                    qM = [qM; qM3];
+%                     self.AnimateTrajectoryWObject(qM3, object);
                 else
                     qPrePosition = self.qOpPosition1;
-                    qM3 = InterpolateWaypointsRadians([self.model.getpos;qPrePosition], self.rStep);
-                    self.AnimateTrajectoryWObject(qM3, object);
+                    qM3 = InterpolateWaypointsRadians([qM(end,:);qPrePosition], self.rStep);
+                    qM = [qM; qM3];
+%                     self.AnimateTrajectoryWObject(qM3, object);
                 end
 
                 % Use RMRC trajectory to 
-                qM4 = self.GenTrajRMRC(container');
-                self.AnimateTrajectoryWObject(qM4, object);
-                pause(2);
+                qM4 = self.GenTrajRMRC(qM3(end,:),container');
+                qM = [qM;qM4];
+
                 qM4Return = flip(qM4);
-                self.AnimateTrajectoryWObject(qM4Return, object);
+                qM = [qM;qM4Return];
             end
-            self.DropOffPayload(object);
-            display(['Completed Order. Duration: ', num2str(toc)])
+            display(['Full trajectory generation completed: Duration', num2str(toc)])
+            pause(1)
+            
+            % Start animating trajectory
+            tic
+            display(['Now fufilling order for: ', order.name])
+            % Save q values fo resume function
+            self.qMResume = qM;
+            self.AnimateTrajectoryWObject(qM, object, 1)
+            self.DropOffPayload(object)
+            display(['Completed Order. Duration: ', num2str(toc)],' ','seconds')
         end
 
         %% DropOff payload 
-        function DropOffPayload(self,object)
-            % Got to drop of position. 
-            qCurrent = self.model.getpos;
-
-            qM1 = InterpolateWaypointsRadians([qCurrent;self.qDrop], self.rStep);
-            self.AnimateTrajectoryWObject(qM1,object);
-            
-            % Drop off
-            pDrop = [0, 1.4, 1];
-            qM2 = self.GenTrajRMRC(pDrop');
-            self.AnimateTrajectoryWObject(qM2,object);
-
-            % Return position
-            qM2Return = flip(qM2);
-            self.AnimateTrajectory(qM2Return)
-
-            % Return to home position
-            qCurrent = self.model.getpos;
-            qM2Home = InterpolateWaypointsRadians([qCurrent;self.qOp],self.rStep);
-            self.AnimateTrajectory(qM2Home)
+        function DropOffPayload(self, object)
+            if self.canOperate == true
+                % Got to drop of position. 
+                qCurrent = self.model.getpos();
+    
+                qM1 = InterpolateWaypointsRadians([qCurrent;self.qDrop], self.rStep);
+                self.AnimateTrajectoryWObject(qM1, object, 1);
+                
+                % Drop off
+                pDrop = [0, 1.4, 1];
+                qM2 = self.GenTrajRMRC(self.model.getpos(),pDrop');
+                self.AnimateTrajectoryWObject(qM2,object, 1);
+    
+                % Return position
+                qM2Return = flip(qM2);
+                self.AnimateTrajectory(qM2Return)
+    
+                % Return to home position
+                qCurrent = self.model.getpos;
+                qM2Home = InterpolateWaypointsRadians([qCurrent;self.qOp],self.rStep);
+                self.AnimateTrajectory(qM2Home)
+            end
         end
 
         %% Animate Trajectory with Object
-        function AnimateTrajectoryWObject(self, qM, object)
+        function AnimateTrajectoryWObject(self, qM, object, startIdx)
+            self.qMResume = qM;
             % Check if the robot should keep operating. Else break
-            for i = 1: size(qM,1)
+            for i = startIdx: 1:size(qM,1)
+                if i == self.holdingIndex
+                    self.isHolding =  true;
+                end
                 % Check if the robot should keep operating
                 if self.canOperate == true
                     % set current pose
                     q = qM(i,:);
-                    tr = self.model.fkine(q);
+                    if self.isHolding == true
+                        tr = self.model.fkine(q);
+                        object.trObject(tr);
+                    end
                     % animate
                     self.model.animate(q);
-                    object.trObject(tr);
+                    self.idxResume = i;
                 else
+                    % Trajectory state when interrupted
+                    display(['Robot stoped at index ', num2str(self.idxResume)])
                     break;
                 end
             end
@@ -272,6 +304,7 @@ classdef Sawyer < handle
         %% Animate Trajectory
         function AnimateTrajectory(self, qM)
             % Check if the robot should keep operating. Else break
+            self.qMResume = qM;
             for i = 1: size(qM,1)
                 if self.canOperate == true
                     % set current pose
@@ -279,6 +312,7 @@ classdef Sawyer < handle
                     % animate
                     self.model.animate(q);
                 else
+                    self.idxResume = i;
                     break;
                 end
             end
