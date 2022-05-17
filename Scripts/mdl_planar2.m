@@ -37,7 +37,21 @@
 % along with RTB.  If not, see <http://www.gnu.org/licenses/>.
 %
 % http://www.petercorke.com
-
+% % % % % %% Class for planar2 robot simulation
+% % % % %         function self = p2(x,y,z, test)
+% % % % %             tic;
+% % % % %             if nargin < 4
+% % % % %                 self.GetSawyerRobot(x,y,z);
+% % % % %                 self.PlotAndColourRobot();
+% % % % %             else
+% % % % %                 if test == true
+% % % % %                     self.GetSawyerRobot(x,y,z);
+% % % % %                 else
+% % % % %                    self.GetSawyerRobot(x,y,z);
+% % % % %                    self.PlotAndColourRobot();
+% % % % %                 end
+% % % % %             
+% % % % %         end
 
 a1 = 1;
 a2 = 1;

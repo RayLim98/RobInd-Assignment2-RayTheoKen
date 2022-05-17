@@ -19,7 +19,7 @@ p2 = SerialLink([
 
 q = zeros(1,2);%use this instead
 scale = 0.5; 
-workspace = [-2 2 -2 2 -0.2 2];                                       % Set the size of the workspace when drawing the robot
+workspace = [-2 2 -2 2 -0.1 2];                                       % Set the size of the workspace when drawing the robot
 p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
 %%
 % % % % qz = [0 0];
@@ -35,8 +35,8 @@ p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robo
 % % % robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
 
 % 2.2 and 2.3
-centerpnt = [0,2.6,0.5];
-side = 1.7;
+centerpnt = [0,2,0.5];
+side = 2.5;
 plotOptions.plotFaces = true;
 [vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions);
 axis equal
@@ -66,8 +66,8 @@ for i = 1 : size(tr,3)-1
 end
 
 %Go through until there are no step sizes larger than 1 degree
-q1 = [pi/4,0,0];
-q2 = [3*pi/4,0,0];
+q1 = [0,0,0];
+q2 = [pi/2,0,0];
 steps = 100;
 while ~isempty(find(1 < abs(diff(rad2deg(jtraj(q1,q2,steps)))),1))
     steps = steps + 1;
