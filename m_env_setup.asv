@@ -1,5 +1,5 @@
 %  Render Objects
-sBot = Sawyer(0,2,1); %generate sawyer model 
+sBot = Sawyer(0,2,1);
 hold on
 Bottle = PlyObject('CupHeadLess.ply', [0,2.9,0.9], pi/2);
 Lip = PlyObject('Lid.ply', [0,2.9,0.9], pi/2);
@@ -14,8 +14,8 @@ Container3 = PlyObject('GrnContainer.ply', [0.8,2,0.9], 3/2*pi);
 Container4 = PlyObject('BlkContainer.ply', [0.8,2.55,0.9], 3/2*pi);
 
 % Set view
-%camlight
-axis([-3 3 -2 4 -0.1 2])
+camlight
+axis([-3 3 -2 4 0 2])
 view(45, 45)
 
 % Render floor as image
@@ -29,13 +29,4 @@ surf(xImage,yImage,zImage,...       % Plot the surface
  
  
 % Establish workspace cube 
-p2Bot = p2; 
-%p2.base = p2.base * transl(2,0,0);
-hold on
 dlc = DigitalLightCurtain();
-%CollisionExists;
-p2Collide;
-%BREACH_TESTING;
-p2.teach
-
-

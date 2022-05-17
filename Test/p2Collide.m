@@ -1,19 +1,35 @@
-%% Robotics
-% Lab 5 - Questions 2 and 3: 3-link plannar collision check and avoidance
+%% Testing mdl_planar2 colliding workspace
 function [  ] = Lab5Solution_Question2and3( )
+
+
 
 % clf
 close all;
 
-% 2.1: Make a 2DOF model
-L1 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
-L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
 
-robot = SerialLink([L1 L2 ],'name','myRobot');                     
-q = zeros(1,2);                                                     % Create a vector of initial joint angles        
-scale = 0.5;
+a1 = 1.7;
+a2 = 0.8;
+
+robot = SerialLink([
+    Revolute('d', 0, 'a', a1, 'alpha', 0, 'standard')
+    Revolute('d', 0, 'a', a2, 'alpha', 0, 'standard')
+    ], ...
+    'name', 'two link');
+% qz = [0 0];
+q = zeros(1,2);%use this instead
+scale = 0.5; %add
 workspace = [-2 2 -2 2 -0.2 2];                                       % Set the size of the workspace when drawing the robot
 robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
+
+% 2.1: Make a 2DOF model
+% % % L1 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+% % % L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
+
+% % % robot = SerialLink([L1 L2 ],'name','myRobot');                     
+% % % q = zeros(1,2);                                                     % Create a vector of initial joint angles        
+% % % scale = 0.5;
+% % % workspace = [-2 2 -2 2 -0.2 2];                                       % Set the size of the workspace when drawing the robot
+% % % robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
 
 % 2.2 and 2.3
 centerpnt = [2,0,0.05];
@@ -31,7 +47,8 @@ camlight
 %             ; 0,-1,0 ...
 %             ;1,0,0];
 robot.teach;
-%%
+
+
 % 2.4: Get the transform of every joint (i.e. start and end of every link)
 tr = zeros(4,4,robot.n+1);
 tr(:,:,1) = robot.base;
@@ -53,25 +70,26 @@ for i = 1 : size(tr,3)-1
         end
     end    
 end
+% % % 
+% % % % 2.6: Go through until there are no step sizes larger than 1 degree
+% % % q1 = [-pi/4,0,0];
+% % % q2 = [pi/4,0,0];
+% % % steps = 10;
+% % % while ~isempty(find(1 < abs(diff(rad2deg(jtraj(q1,q2,steps)))),1))
+% % %     steps = steps + 1;
+% % % end
+% % % qMatrix = jtraj(q1,q2,steps);
+% % % 
+% % % % 2.7
+% % % result = true(steps,1);
+% % % for i = 1: steps
+% % %     result(i) = IsCollision(robot,qMatrix(i,:),faces,vertex,faceNormals,false);
+% % %     robot.animate(qMatrix(i,:));
+% % % end
 
-% 2.6: Go through until there are no step sizes larger than 1 degree
-q1 = [-pi/4,0,0];
-q2 = [pi/4,0,0];
-steps = 20;
-while ~isempty(find(1 < abs(diff(rad2deg(jtraj(q1,q2,steps)))),1))
-    steps = steps + 1;
+robot.teach;
 end
-qMatrix = jtraj(q1,q2,steps);
 
-% 2.7
-result = true(steps,1);
-for i = 1: steps
-    result(i) = IsCollision(robot,qMatrix(i,:),faces,vertex,faceNormals,false);
-    robot.animate(qMatrix(i,:));
-end
-
-
-end
 
 %% IsIntersectionPointInsideTriangle
 % Given a point which is known to be on the same plane as the triangle
@@ -130,7 +148,7 @@ for qIndex = 1:size(qMatrix,1)
             [intersectP,check] = LinePlaneIntersection(faceNormals(faceIndex,:),vertOnPlane,tr(1:3,4,i)',tr(1:3,4,i+1)'); 
             if check == 1 && IsIntersectionPointInsideTriangle(intersectP,vertex(faces(faceIndex,:)',:))
                 plot3(intersectP(1),intersectP(2),intersectP(3),'g*');
-                display('Intersection');
+                display('Workplace Breach!');
                 result = true;
                 if returnOnceFound
                     return
@@ -189,4 +207,3 @@ for i = 1: size(waypointRadians,1)-1
     qMatrix = [qMatrix ; FineInterpolation(waypointRadians(i,:),waypointRadians(i+1,:),maxStepRadians)]; %#ok<AGROW>
 end
 end
-

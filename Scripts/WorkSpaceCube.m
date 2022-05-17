@@ -32,7 +32,7 @@ face=[1,2,3;1,3,7;
 % % %      FaceAlpha = 0.01;
 % % %  end
 
-    FaceAlpha = 0.1;
+    FaceAlpha = 0.2;
 
 if 2 < nargout    
     faceNormals = zeros(size(face,1),3);
