@@ -29,13 +29,13 @@ surf(xImage,yImage,zImage,...       % Plot the surface
  
  
 % Establish workspace cube 
-p2Bot = p2; 
+mdl_planar2; 
 %p2.base = p2.base * transl(2,0,0);
 hold on
 dlc = DigitalLightCurtain();
 %CollisionExists;
-p2Collide;
-%BREACH_TESTING;
+%p2Collide;
+BREACH_TESTING;
 p2.teach
 
 

@@ -3,15 +3,15 @@ function [  ] = Lab5Solution_Question2and3( )
 
 
 
-%clf
-%close all;
+clf
+close all;
 
 
 a1 = 1.7;
 a2 = 0.8;
 
 p2 = SerialLink([
-    Revolute('d', 0, 'a', a1, 'alpha', 90, 'standard')
+    Revolute('d', 0, 'a', a1, 'alpha', 0, 'standard')
     Revolute('d', 0, 'a', a2, 'alpha', 0, 'standard')
     ], ...
     'name', 'two link'); 
@@ -34,8 +34,8 @@ p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robo
 % % % robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
 
 % 2.2 and 2.3
-centerpnt = [0,2.6,0.5];
-side = 1.7;
+centerpnt = [2,0,0.05];
+side = 0.6;
 plotOptions.plotFaces = true;
 [vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions);
 axis equal
@@ -48,14 +48,14 @@ camlight
 %             ; 0,1,0 ...
 %             ; 0,-1,0 ...
 %             ;1,0,0];
-%robot.teach;
+robot.teach;
 
 
 % 2.4: Get the transform of every joint (i.e. start and end of every link)
-tr = zeros(4,4,p2.n+1);
-tr(:,:,1) = p2.base;
-L = p2.links;
-for i = 1 : p2.n
+tr = zeros(4,4,robot.n+1);
+tr(:,:,1) = robot.base;
+L = robot.links;
+for i = 1 : robot.n
     tr(:,:,i+1) = tr(:,:,i) * trotz(q(i)+L(i).offset) * transl(0,0,L(i).d) * transl(L(i).a,0,0) * trotx(L(i).alpha);
 end
 
@@ -85,8 +85,8 @@ qMatrix = jtraj(q1,q2,steps);
 % 2.7
 result = true(steps,1);
 for i = 1: steps
-    result(i) = IsCollision(p2,qMatrix(i,:),faces,vertex,faceNormals,false);
-    p2.animate(qMatrix(i,:));
+    result(i) = IsCollision(robot,qMatrix(i,:),faces,vertex,faceNormals,false);
+    robot.animate(qMatrix(i,:));
 end
 
 %robot.teach;
@@ -133,7 +133,7 @@ end
 % This is based upon the output of questions 2.5 and 2.6
 % Given a robot model (robot), and trajectory (i.e. joint state vector) (qMatrix)
 % and triangle obstacles in the environment (faces,vertex,faceNormals)
-function result = IsCollision(p2,qMatrix,faces,vertex,faceNormals,returnOnceFound)
+function result = IsCollision(robot,qMatrix,faces,vertex,faceNormals,returnOnceFound)
 if nargin < 6
     returnOnceFound = true;
 end
@@ -141,7 +141,7 @@ result = false;
 
 for qIndex = 1:size(qMatrix,1)
     % Get the transform of every joint (i.e. start and end of every link)
-    tr = GetLinkPoses(qMatrix(qIndex,:), p2);
+    tr = GetLinkPoses(qMatrix(qIndex,:), robot);
 
     % Go through each link and also each triangle face
     for i = 1 : size(tr,3)-1    
@@ -165,11 +165,11 @@ end
 % q - robot joint angles
 % robot -  seriallink robot model
 % transforms - list of transforms
-function [ transforms ] = GetLinkPoses( q, p2)
+function [ transforms ] = GetLinkPoses( q, robot)
 
-links = p2.links;
+links = robot.links;
 transforms = zeros(4, 4, length(links) + 1);
-transforms(:,:,1) = p2.base;
+transforms(:,:,1) = robot.base;
 
 for i = 1:length(links)
     L = links(1,i);

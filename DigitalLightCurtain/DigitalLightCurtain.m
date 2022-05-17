@@ -21,7 +21,7 @@ classdef DigitalLightCurtain
         end
         
         function isBreached = isBreached(self, p2, qM)
-            state = CollisionExist(p2, qM, self.vertex, self.faces, self.faceNormals) == true;
+            state = p2Collide(p2, qM, self.vertex, self.faces, self.faceNormals) == true;
             if ~state
                 display('UR GOOD')
             else
