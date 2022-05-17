@@ -28,14 +28,32 @@ surf(xImage,yImage,zImage,...       % Plot the surface
      'FaceColor','texturemap');
  
  
-% Establish workspace cube 
-mdl_planar2; 
-%p2.base = p2.base * transl(2,0,0);
-hold on
-dlc = DigitalLightCurtain();
+% Establish workspace cube
+
+%//////////////
+a1 = 1.0; %Link 1 length 
+a2 = 0.8; %Link 2 length
+p2 = SerialLink([
+    Revolute('d', 0, 'a', a1, 'alpha', 90, 'standard')
+    Revolute('d', 0, 'a', a2, 'alpha', 0, 'standard')
+    ], ...
+    'name', 'two link'); 
+q = zeros(1,2);%use this instead
+scale = 0.5; 
+workspace = [-2 2 -2 2 -0.2 2];                                       % Set the size of the workspace when drawing the robot
+p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
+p2.teach;
+%//////
+
+% % % % % mdl_planar2; 
+% % % % % hold on
+% % % % % p2.base = p2.base * transl(2,0,0);
+% % % % % hold on
+BREACH_TESTING;
+%dlc = DigitalLightCurtain();
 %CollisionExists;
 %p2Collide;
-BREACH_TESTING;
-p2.teach
+
+%p2.teach
 
 

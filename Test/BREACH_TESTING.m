@@ -5,10 +5,11 @@
 mdl_planar2 %generate p2 bot
 hold on 
 %axis([-2 4 -2 2 0 2])   %adjust workplace
-p2.base = p2.base * transl(2,0,0);  %move the base closer towards light curtain
+%p2.base = p2.base * transl(2,0,0);  %move the base closer towards light curtain
 q1 =[-0.6283         0];
 q2 = [0.6283         0];
-qM = jtraj(q1,q2,20);   
+qM = jtraj(q1,q2,20);  
+% p2.model.animate(qM);
 
 %% GEN Barrier is breached
 dlc = DigitalLightCurtain();

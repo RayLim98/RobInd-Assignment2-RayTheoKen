@@ -1,5 +1,5 @@
 %% Testing mdl_planar2 colliding workspace
-function [  ] = Lab5Solution_Question2and3( )
+function [  ] = p2SPawn( )
 
 
 
@@ -7,20 +7,21 @@ function [  ] = Lab5Solution_Question2and3( )
 %close all;
 
 
-a1 = 1.7;
-a2 = 0.8;
+a1 = 1.0; %Link 1 length 
+a2 = 0.8; %Link 2 length
+
 
 p2 = SerialLink([
-    Revolute('d', 0, 'a', a1, 'alpha', 90, 'standard')
+    Revolute('d', 0, 'a', a1, 'alpha', 0, 'standard')
     Revolute('d', 0, 'a', a2, 'alpha', 0, 'standard')
     ], ...
     'name', 'two link'); 
 
 q = zeros(1,2);%use this instead
-scale = 0.5; %add
+scale = 0.5; 
 workspace = [-2 2 -2 2 -0.2 2];                                       % Set the size of the workspace when drawing the robot
 p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
-
+%%
 % % % % qz = [0 0];
 
 % 2.1: Make a 2DOF model
@@ -39,16 +40,7 @@ side = 1.7;
 plotOptions.plotFaces = true;
 [vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions);
 axis equal
-camlight
-% pPoints = [1.25,0,-0.5 ...
-%         ;2,0.75,-0.5 ...
-%         ;2,-0.75,-0.5 ...
-%         ;2.75,0,-0.5];
-% pNormals = [-1,0,0 ...
-%             ; 0,1,0 ...
-%             ; 0,-1,0 ...
-%             ;1,0,0];
-%robot.teach;
+%camlight
 
 
 % 2.4: Get the transform of every joint (i.e. start and end of every link)
@@ -73,23 +65,22 @@ for i = 1 : size(tr,3)-1
     end    
 end
 
-% 2.6: Go through until there are no step sizes larger than 1 degree
-q1 = [-pi/4,0,0];
-q2 = [pi/4,0,0];
-steps = 10;
+%Go through until there are no step sizes larger than 1 degree
+q1 = [pi/4,0,0];
+q2 = [3*pi/4,0,0];
+steps = 100;
 while ~isempty(find(1 < abs(diff(rad2deg(jtraj(q1,q2,steps)))),1))
     steps = steps + 1;
 end
 qMatrix = jtraj(q1,q2,steps);
 
-% 2.7
 result = true(steps,1);
 for i = 1: steps
     result(i) = IsCollision(p2,qMatrix(i,:),faces,vertex,faceNormals,false);
     p2.animate(qMatrix(i,:));
 end
 
-%robot.teach;
+% p2.teach; %UNCOMMENT THIS TO MANUALLY CONTROL
 end
 
 
@@ -130,7 +121,6 @@ result = 1;                      % intersectP is in Triangle
 end
 
 %% IsCollision
-% This is based upon the output of questions 2.5 and 2.6
 % Given a robot model (robot), and trajectory (i.e. joint state vector) (qMatrix)
 % and triangle obstacles in the environment (faces,vertex,faceNormals)
 function result = IsCollision(p2,qMatrix,faces,vertex,faceNormals,returnOnceFound)
