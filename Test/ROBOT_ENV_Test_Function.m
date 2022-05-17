@@ -16,7 +16,7 @@ qCup = [1.0385   -1.9437         0    1.5429         0    2.0320         0];
 
 trBlue = transl(-0.6,2.4,1);
 
-qM = sBot.GoToCupTrajectory();
+qM = sBot.GenCupTrajectory();
 sBot.model.plot3d(qM);
 
 %%
