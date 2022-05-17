@@ -246,7 +246,7 @@ classdef Sawyer < handle
             self.qMResume = qM;
             self.AnimateTrajectoryWObject(qM, object, 1)
             self.DropOffPayload(object)
-            display(['Completed Order. Duration: ', num2str(toc)],' ','seconds')
+            display(['Completed Order. Duration: ', num2str(toc),' ','seconds'])
         end
 
         %% DropOff payload 
