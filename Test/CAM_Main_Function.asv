@@ -10,9 +10,7 @@ L2 = Link('d',0,'a',1,'alpha',0,'qlim',[-pi pi]);
 
 robot = SerialLink([L1 L2 ],'name','HumanEmployee');                     
 q = zeros(1,2);                                                     % Create a vector of initial joint angles        
-q_init = [0 0 0]; %starting q parameters
-person1_traj = transl(0.5,0,0.8);
-
+q3_init = [0 -pi/2 pi/2 -pi/2 -pi/2 0]; %starting q parameters
 % % % q1 = [-pi/4,0,0];
 % % % q2 = [pi/4,0,0];
 
@@ -29,7 +27,7 @@ robot.plot(q,'workspace',workspace,'scale',scale);                  % Plot the r
 %% Creating a cube and use teach to see collision detection
 centerpnt = [3.8,0,0.05];
 side = 2;
-plotOptions.plotFaces = true; 
+plotOptions.plotFaces = true;
 [vertex,faces,faceNormals] = WorkSpaceCube(centerpnt-side/2, centerpnt+side/2,plotOptions);
 axis equal
 camlight
