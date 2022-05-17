@@ -1,4 +1,3 @@
-%  Render Objects
 sBot = Sawyer(0,2,1); %generate sawyer model 
 hold on
 Bottle = PlyObject('CupHeadLess.ply', [0,2.9,0.9], pi/2);
@@ -39,46 +38,15 @@ zImage = [1.5 1.5; 0 0];                % The z data for the image corners
 surf(xImage,yImage,zImage,...       % Plot the surface
      'CData',img,...
      'FaceColor','texturemap');
- 
- 
-% Establish workspace cube
 
-%//////////////////////////////////////
-% % % % % a1 = 0.3; %Link 1 length 
-% % % % % a2 = 0.3; %Link 2 length
-% % % % % p2 = SerialLink([
-% % % % %     Revolute('d', 0, 'a', a1, 'alpha', 0, 'standard')
-% % % % %     Revolute('d', 0, 'a', a2, 'alpha', 0, 'standard')
-% % % % %     ], ...
-% % % % %     'name', 'two link'); 
-% % % % % p2.base = transl(1.5,1,0.4);
-
-
-
-% % % % % L1 = Link('d', 0, 'a', a1, 'alpha', 0,'offset',0.5,'qlim',[deg2rad(-360),deg2rad(360)]);
-% % % % % L2 = Link('d', 0, 'a', a2, 'alpha', 0,'offset',2,'qlim',[deg2rad(-90),deg2rad(90)]);
-% % % % % % p2Bot = p2(1,1,1); %generate sawyer model 
-% % % hold on
-% % % p2Bot = p2;
-% % % p2Bot = [0,0,0];
 q = zeros(1,2);%use this instead
 scale = 0.5; 
 workspace = [-2 2 -2 2 -0.1 2];                                       % Set the size of the workspace when drawing the robot
 
 p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
 
-
-
-
-% p2.teach;
-%/////////////////////////////////////////////////
-
-% % % % % mdl_planar2; 
-% % % % % hold on
-% % % % % p2.base = p2.base * transl(2,0,0);
-% % % % % hold on
-%dlc = DigitalLightCurtain();
 BREACH_TESTING;
 p2Collide; %USE THIS ALTERNATIVE METHOD
+
 
 

@@ -58,9 +58,9 @@ for i = 1 : size(tr,3)-1
         [intersectP,check] = LinePlaneIntersection(faceNormals(faceIndex,:),vertOnPlane,tr(1:3,4,i)',tr(1:3,4,i+1)'); 
         if check == 1 && IsIntersectionPointInsideTriangle(intersectP,vertex(faces(faceIndex,:)',:))
             plot3(intersectP(1),intersectP(2),intersectP(3),'g*');
-            display('Get Back Fool!');
+            display('Workplace Breach!');
         else
-            display('Ur Good');
+            display('All Clear');
         end
     end    
 end
