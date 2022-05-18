@@ -41,12 +41,12 @@ surf(xImage,yImage,zImage,...       % Plot the surface
      'FaceColor','texturemap');
  
  
-%% Collision Test
-q = zeros(1,2);%use this instead
-scale = 0.5; 
-workspace = [-2 2 -2 2 -0.1 2];                                       % Set the size of the workspace when drawing the robot
-p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
-%BREACH_TESTING;
-p2Collide; %USE THIS ALTERNATIVE METHOD
+% % % %% Collision Test (UNCOMMENT FOR COLLISION TEST)
+% % % q = zeros(1,2);%use this instead
+% % % scale = 0.5; 
+% % % workspace = [-2 2 -2 2 -0.1 2];                                       % Set the size of the workspace when drawing the robot
+% % % %p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
+% % % %BREACH_TESTING;
+% % % p2Collide; %USE THIS ALTERNATIVE METHOD
 
 
