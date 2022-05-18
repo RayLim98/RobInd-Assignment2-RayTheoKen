@@ -1,4 +1,44 @@
-%  Render Objects
+%%
+classdef P2 < handle
+    
+    
+properties
+        model;
+        workspace = [-2 2 -2 2 0 2];   
+
+    
+ % Bot state
+        
+        canOperate = true;
+        isHolding = false;
+        holdingIndex = 0;
+        releaseIndex = 0;
+        qMResume = [];
+        idxResume = 0;
+    
+        
+        
+         %% GetUR3dRobot
+        function getP2(self, x, y, z)
+            % Create a unique name (ms timestamp after 1ms pause)
+            pause(0.001);
+            name = ['SawyerBot',datestr(now,'yyyymmddTHHMMSSFFF')];
+
+            L(1) = Link('d',0.237,  'a',0.081,   'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
+            L(2) = Link('d',0.1925, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);    
+            L(3) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-175 175]*pi/180);
+            L(4) = Link('d',-0.1685,'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(5) = Link('d',0.4,    'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(6) = Link('d',0.1363, 'a',0,       'alpha',-1.571, 'offset',0, 'qlim',[-170 170]*pi/180);
+            L(7) = Link('d',0.11,   'a',0,       'alpha',0,      'offset',0, 'qlim',[-270 270]*pi/180);
+
+            self.model = SerialLink(L,'name',name);
+            self.model.base = self.model.base * transl(x, y, z);
+        end
+
+        
+%% 
+        
 sBot = Sawyer(0,2,1); %generate sawyer model 
 hold on
 Bottle = PlyObject('CupHeadLess.ply', [0,2.9,0.9], pi/2);
@@ -14,7 +54,7 @@ Container2 = PlyObject('LavContainer.ply', [-0.89,1.75,0.9], pi/2);
 Container3 = PlyObject('GrnContainer.ply', [0.8,2,0.9], 3/2*pi);
 Container4 = PlyObject('BlkContainer.ply', [0.8,2.55,0.9], 3/2*pi);
 Light_Curtain1 = PlyObject('Light_curtain_pair.ply', [1.3,1.75,-0.1], pi);
-Light_Curtain2 = PlyObject('Light_curtain_pair2.ply', [0.6,0.4,-0.1], pi/2);
+% Light_Curtain2 = PlyObject('Light_curtain_pair.ply', [1,1,-0.1], 0);
 
 
 % Set view
@@ -39,14 +79,15 @@ zImage = [1.5 1.5; 0 0];                % The z data for the image corners
 surf(xImage,yImage,zImage,...       % Plot the surface
      'CData',img,...
      'FaceColor','texturemap');
- 
- 
-%% Collision Test
+
 q = zeros(1,2);%use this instead
 scale = 0.5; 
 workspace = [-2 2 -2 2 -0.1 2];                                       % Set the size of the workspace when drawing the robot
+
 p2.plot(q,'workspace',workspace,'scale',scale);                  % Plot the robot
-%BREACH_TESTING;
+
+BREACH_TESTING;
 p2Collide; %USE THIS ALTERNATIVE METHOD
+
 
 
